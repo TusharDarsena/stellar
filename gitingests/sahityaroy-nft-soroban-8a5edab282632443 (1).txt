@@ -1,0 +1,719 @@
+Directory structure:
+└── sahityaroy-nft-soroban/
+    ├── README.md
+    ├── Cargo.toml
+    └── src/
+        ├── admin.rs
+        ├── approval.rs
+        ├── balance.rs
+        ├── contract.rs
+        ├── event.rs
+        ├── interface.rs
+        ├── lib.rs
+        ├── metadata.rs
+        ├── owner.rs
+        └── storage_types.rs
+
+================================================
+FILE: README.md
+================================================
+This project comprises a set of smart contracts designed for managing Non-Fungible Tokens (NFTs) within the Soroban environment.
+
+### Overview
+- The project contains a `src` folder and a `Cargo.toml` file.
+- Within `src`, there are various Rust smart contracts imported into `contract.rs`.
+- These contracts are structured to allow for inheritance of functionality, inspired by existing fungible token contracts in Soroban.
+
+### Contracts
+1. **admin.rs**: Manages system administrators, enabling checks, reads, writes, and authentication verification.
+2. **approval.rs**: Handles approvals for specific actions, including reading, writing, and checking approval status.
+3. **balance.rs**: Manages token balances, supply, minted status, and related functions such as reading, writing, and incrementing balances.
+4. **contract.rs**: The main function responsible for NFT operations, including minting and transfers, adhering to the ERC721 standard.
+5. **event.rs**: Publishes events for various actions such as transfers, setting administrators, minting, burning, and approvals.
+6. **interface.rs**: Contains interfaces for contract functions.
+7. **lib.rs**: Modular implementation for NFT system designed for Soroban environments.
+8. **metadata.rs**: Handles token metadata operations like reading and writing token names, symbols, and URIs.
+9. **owner.rs**: Manages token ownership, providing functions for reading, writing, and checking owners.
+10. **storage_types.rs**: Defines contract types for managing approvals and data keys in the system.
+
+### Steps to Compile
+1. Set up Soroban CLI as per the provided documentation.
+2. Run `soroban contract build` after installation.
+3. Upon successful compilation, a `target` folder will be created containing the wasm executable.
+
+Overall, the README provides an overview of the contract structure, functionalities, and instructions for compiling the code using Soroban CLI.
+
+
+
+================================================
+FILE: Cargo.toml
+================================================
+[package]
+name = "soroban-nft"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-auth = { version = "0.4.3" }
+soroban-sdk = { version = "0.4.3" }
+
+[dev-dependencies]
+soroban-auth = { version = "0.4.3", features = ["testutils"] }
+soroban-sdk = { version = "0.4.3", features = ["testutils"] }
+ed25519-dalek = "1.0.1"
+rand = "0.7.3"
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
+
+
+================================================
+FILE: src/admin.rs
+================================================
+use crate::storage_types::DataKey;
+use soroban_auth::{Identifier, Signature};
+use soroban_sdk::Env;
+
+pub fn has_administrator(env: &Env) -> bool {
+    let key = DataKey::Admin;
+    env.storage().has(key)
+}
+
+pub fn read_administrator(env: &Env) -> Identifier {
+    let key = DataKey::Admin;
+    env.storage().get_unchecked(key).unwrap()
+}
+
+pub fn write_administrator(env: &Env, id: Identifier) {
+    let key = DataKey::Admin;
+    env.storage().set(key, id);
+}
+
+pub fn check_admin(env: &Env, auth: &Signature) {
+    let auth_id = auth.identifier(env);
+    assert!(
+        auth_id == read_administrator(env),
+        "not authorized by admin"
+    );
+}
+
+
+
+================================================
+FILE: src/approval.rs
+================================================
+use crate::owner::zero_address;
+use crate::storage_types::DataKey;
+use crate::storage_types::{ApprovalAll, ApprovalKey};
+use soroban_auth::Identifier;
+use soroban_sdk::Env;
+
+pub fn read_approval(env: &Env, id: i128) -> Identifier {
+    let key = DataKey::Approval(ApprovalKey::ID(id));
+    if let Some(approval) = env.storage().get(key) {
+        approval.unwrap()
+    } else {
+        zero_address(&env)
+    }
+}
+
+pub fn read_approval_all(env: &Env, owner: Identifier, operator: Identifier) -> bool {
+    let key = DataKey::Approval(ApprovalKey::All(ApprovalAll { operator, owner }));
+    if let Some(approval) = env.storage().get(key) {
+        approval.unwrap()
+    } else {
+        false
+    }
+}
+
+pub fn write_approval(env: &Env, id: i128, operator: Identifier) {
+    let key = DataKey::Approval(ApprovalKey::ID(id));
+    env.storage().set(key, operator);
+}
+
+pub fn write_approval_all(env: &Env, owner: Identifier, operator: Identifier, approved: bool) {
+    let key = DataKey::Approval(ApprovalKey::All(ApprovalAll { operator, owner }));
+    env.storage().set(key, approved);
+}
+
+
+
+================================================
+FILE: src/balance.rs
+================================================
+use crate::{interface::WriteType, storage_types::DataKey};
+use soroban_auth::Identifier;
+use soroban_sdk::Env;
+
+pub fn read_balance(env: &Env, owner: Identifier) -> i128 {
+    let key = DataKey::Balance(owner);
+    match env.storage().get(key) {
+        Some(balance) => balance.unwrap(),
+        None => 0,
+    }
+}
+
+pub fn write_balance(env: &Env, owner: Identifier, write_type: WriteType) {
+    let key = DataKey::Balance(owner.clone());
+    let balance = read_balance(env, owner);
+
+    match write_type {
+        WriteType::Add => env.storage().set(key, balance + 1),
+        WriteType::Remove => env.storage().set(key, balance - 1),
+    }
+}
+
+pub fn read_supply(env: &Env) -> i128 {
+    let key = DataKey::Supply;
+    match env.storage().get(key) {
+        Some(balance) => balance.unwrap(),
+        None => 0,
+    }
+}
+
+pub fn increment_supply(env: &Env) {
+    let key = DataKey::Supply;
+    env.storage().set(key, read_supply(&env) + 1);
+}
+
+pub fn read_minted(env: &Env, owner: Identifier) -> bool {
+    let key = DataKey::Minted(owner);
+    match env.storage().get(key) {
+        Some(minted) => minted.unwrap(),
+        None => false,
+    }
+}
+
+pub fn write_minted(env: &Env, owner: Identifier) {
+    let key = DataKey::Minted(owner);
+    env.storage().set(key, true);
+}
+
+pub fn check_minted(env: &Env, owner: Identifier) {
+    assert!(!read_minted(&env, owner), "already minted");
+}
+
+
+
+================================================
+FILE: src/contract.rs
+================================================
+use crate::admin::{check_admin, has_administrator, read_administrator, write_administrator};
+use crate::approval::{read_approval, read_approval_all, write_approval, write_approval_all};
+use crate::balance::{
+    check_minted, increment_supply, read_balance, read_supply, write_balance, write_minted,
+};
+use crate::event;
+use crate::interface::{NonFungibleTokenTrait, WriteType};
+use crate::metadata::{
+     read_name, read_symbol, read_token_uri, write_name, write_symbol, write_token_uri,
+};
+use crate::owner::{check_owner, read_owner, write_owner, zero_address};
+use crate::storage_types::DataKey;
+use soroban_auth::verify;
+use soroban_auth::{Identifier, Signature};
+use soroban_sdk::{contractimpl, symbol, Bytes, Env};
+
+pub struct NonFungibleToken;
+
+fn read_nonce(env: &Env, id: &Identifier) -> i128 {
+    let key = DataKey::Nonce(id.clone());
+    env.storage().get(key).unwrap_or(Ok(0)).unwrap()
+}
+
+fn verify_and_consume_nonce(env: &Env, auth: &Signature, expected_nonce: i128) {
+    match auth {
+        Signature::Invoker => {
+            if expected_nonce != 0 {
+                panic!("nonce should be zero for Invoker")
+            }
+            return;
+        }
+        _ => {}
+    }
+
+    let id = auth.identifier(env);
+    let key = DataKey::Nonce(id.clone());
+    let nonce = read_nonce(env, &id);
+
+    assert!(nonce == expected_nonce, "incorrect nonce");
+
+    env.storage().set(key, &nonce + 1);
+}
+
+#[contractimpl]
+impl NonFungibleTokenTrait for NonFungibleToken {
+    fn initialize(env: Env, admin: Identifier, name: Bytes, symbol: Bytes) {
+        assert!(!has_administrator(&env), "already initialized");
+
+        write_administrator(&env, admin);
+        write_name(&env, name);
+        write_symbol(&env, symbol);
+    }
+
+    fn nonce(env: Env, id: Identifier) -> i128 {
+        read_nonce(&env, &id)
+    }
+
+    fn admin(env: Env) -> Identifier {
+        read_administrator(&env)
+    }
+
+    fn set_admin(env: Env, admin: Signature, nonce: i128, new_admin: Identifier) {
+        check_admin(&env, &admin);
+
+        verify_and_consume_nonce(&env, &admin, nonce);
+
+        let admin_id = admin.identifier(&env);
+
+        verify(
+            &env,
+            &admin,
+            symbol!("set_admin"),
+            (&admin_id, nonce, &new_admin),
+        );
+        write_administrator(&env, new_admin.clone());
+        event::set_admin(&env, admin_id, new_admin);
+    }
+
+    fn name(env: Env) -> Bytes {
+        read_name(&env)
+    }
+
+    fn symbol(env: Env) -> Bytes {
+        read_symbol(&env)
+    }
+
+    fn token_uri(env: Env, id: i128) -> Bytes {
+        read_token_uri(&env, id)
+    }
+
+    fn appr(env: Env, owner: Signature, nonce: i128, operator: Identifier, id: i128) {
+        check_owner(&env, &owner.identifier(&env), id);
+        verify_and_consume_nonce(&env, &owner, nonce);
+
+        write_approval(&env, id, operator.clone());
+
+        event::approve(&env, operator, id);
+    }
+
+    fn appr_all(env: Env, owner: Signature, nonce: i128, operator: Identifier, approved: bool) {
+        verify_and_consume_nonce(&env, &owner, nonce);
+
+        write_approval_all(&env, owner.identifier(&env), operator.clone(), approved);
+        event::approve_all(&env, operator, owner.identifier(&env))
+    }
+
+    fn get_appr(env: Env, id: i128) -> Identifier {
+        read_approval(&env, id)
+    }
+
+    fn is_appr(env: Env, owner: Identifier, operator: Identifier) -> bool {
+        read_approval_all(&env, owner, operator)
+    }
+
+    fn balance(env: Env, owner: Identifier) -> i128 {
+        read_balance(&env, owner)
+    }
+
+    fn owner(env: Env, id: i128) -> Identifier {
+        read_owner(&env, id)
+    }
+
+    fn xfer(env: Env, from: Signature, nonce: i128, to: Identifier, id: i128) {
+        check_owner(&env, &from.identifier(&env), id);
+        verify_and_consume_nonce(&env, &from, nonce);
+
+        write_owner(&env, id, to.clone());
+        write_balance(&env, from.identifier(&env), WriteType::Remove);
+        write_balance(&env, to.clone(), WriteType::Add);
+
+        event::transfer(&env, from.identifier(&env), to, id);
+    }
+
+    fn xfer_from(
+        env: Env,
+        spender: Signature,
+        from: Identifier,
+        to: Identifier,
+        nonce: i128,
+        id: i128,
+    ) {
+        check_owner(&env, &from, id);
+        verify_and_consume_nonce(&env, &spender, nonce);
+
+        if spender.identifier(&env) == read_approval(&env, id)
+            || read_approval_all(&env, from.clone(), spender.identifier(&env))
+        {
+            write_approval(&env, id, zero_address(&env));
+
+            write_owner(&env, id, to.clone());
+            write_balance(&env, from.clone(), WriteType::Remove);
+            write_balance(&env, to.clone(), WriteType::Add);
+
+            event::transfer(&env, from, to, id);
+        } else {
+            panic!("not approved")
+        }
+    }
+
+    fn mint(env: Env, admin: Signature, nonce: i128, to: Identifier, id: i128, uri:Bytes ) {
+        check_admin(&env, &admin);
+        verify_and_consume_nonce(&env, &admin, nonce);
+
+        write_balance(&env, to.clone(), WriteType::Add);
+        write_owner(&env, id, to.clone());
+        increment_supply(&env);
+        write_token_uri(&env, id, uri);
+
+        event::mint(&env, to, id)
+    }
+
+    fn mint_next(env: Env,uri:Bytes) {
+        let to = Identifier::from(env.invoker());
+        check_minted(&env, to.clone());
+        write_minted(&env, to.clone());
+
+        let next_id = read_supply(&env) + 1;
+
+        write_balance(&env, to.clone(), WriteType::Add);
+        write_owner(&env, next_id, to.clone());
+        increment_supply(&env);
+        write_token_uri(&env, next_id, uri);
+
+        event::mint(&env, to, next_id)
+    }
+
+    fn burn(env: Env, admin: Signature, nonce: i128, id: i128) {
+        check_admin(&env, &admin);
+        verify_and_consume_nonce(&env, &admin, nonce);
+
+        let from = read_owner(&env, id);
+        write_owner(&env, id, zero_address(&env));
+        write_balance(&env, from.clone(), WriteType::Remove);
+
+        event::burn(&env, from, id);
+    }
+}
+
+
+
+================================================
+FILE: src/event.rs
+================================================
+use soroban_auth::Identifier;
+use soroban_sdk::{symbol, Env};
+
+pub(crate) fn transfer(e: &Env, from: Identifier, to: Identifier, id: i128) {
+    let topics = (symbol!("transfer"), from, to);
+    e.events().publish(topics, id);
+}
+
+pub(crate) fn set_admin(e: &Env, admin: Identifier, new_admin: Identifier) {
+    let topics = (symbol!("set_admin"), admin);
+    e.events().publish(topics, new_admin);
+}
+
+pub(crate) fn mint(e: &Env, to: Identifier, id: i128) {
+    let topics = (symbol!("mint"), to);
+    e.events().publish(topics, id);
+}
+
+pub(crate) fn burn(e: &Env, from: Identifier, id: i128) {
+    let topics = (symbol!("burn"), from);
+    e.events().publish(topics, id);
+}
+
+pub(crate) fn approve(e: &Env, operator: Identifier, id: i128) {
+    let topics = (symbol!("appr"), operator);
+    e.events().publish(topics, id);
+}
+
+pub(crate) fn approve_all(e: &Env, operator: Identifier, owner: Identifier) {
+    let topics = (symbol!("appr_all"), operator);
+    e.events().publish(topics, owner);
+}
+
+
+
+================================================
+FILE: src/interface.rs
+================================================
+pub trait NonFungibleTokenTrait {
+    // --------------------------------------------------------------------------------
+    // Authentication interface
+    // --------------------------------------------------------------------------------
+
+    // Returns the current nonce for "id".
+    fn nonce(env: soroban_sdk::Env, id: soroban_auth::Identifier) -> i128;
+
+    // --------------------------------------------------------------------------------
+    // Admin interface
+    // --------------------------------------------------------------------------------
+
+    /// Returns the current administrator
+    fn admin(env: soroban_sdk::Env) -> soroban_auth::Identifier;
+
+    /// If "admin" is the administrator, set the administrator to "new_admin".
+    /// Emit event with topics = ["set_admin", admin: Identifier], data = [new_admin: Identifier]
+    fn set_admin(
+        env: soroban_sdk::Env,
+        admin: soroban_auth::Signature,
+        nonce: i128,
+        new_admin: soroban_auth::Identifier,
+    );
+
+    // --------------------------------------------------------------------------------
+    // Metadata interface
+    // --------------------------------------------------------------------------------
+
+    // Get the name for this token.
+    fn name(env: soroban_sdk::Env) -> soroban_sdk::Bytes;
+
+    // Get the symbol for this token.
+    fn symbol(env: soroban_sdk::Env) -> soroban_sdk::Bytes;
+
+    // Get the uniform resource identifier for token "id".
+    fn token_uri(env: soroban_sdk::Env, id: i128) -> soroban_sdk::Bytes;
+
+    // --------------------------------------------------------------------------------
+    // Token interface
+    // --------------------------------------------------------------------------------
+
+    /// Allows "operator" to manage token "id" if "owner" is the current owner of token "id".
+    /// Emit event with topics = ["appr", operator: Identifier], data = [id: i128]
+    fn appr(
+        env: soroban_sdk::Env,
+        owner: soroban_auth::Signature,
+        nonce: i128,
+        operator: soroban_auth::Identifier,
+        id: i128,
+    );
+
+    /// If "approved", allows "operator" to manage all tokens of "owner"
+    /// Emit event with topics = ["appr_all", operator: Identifier], data = [owner: Identifier]
+    fn appr_all(
+        env: soroban_sdk::Env,
+        owner: soroban_auth::Signature,
+        nonce: i128,
+        operator: soroban_auth::Identifier,
+        approved: bool,
+    );
+
+    /// Returns the identifier approved for token "id".
+    fn get_appr(env: soroban_sdk::Env, id: i128) -> soroban_auth::Identifier;
+
+    /// If "operator" is allowed to manage assets of "owner", return true.
+    fn is_appr(
+        env: soroban_sdk::Env,
+        owner: soroban_auth::Identifier,
+        operator: soroban_auth::Identifier,
+    ) -> bool;
+
+    /// Get the balance of "id".
+    fn balance(env: soroban_sdk::Env, owner: soroban_auth::Identifier) -> i128;
+
+    /// Get the owner of "id" token.
+    fn owner(env: soroban_sdk::Env, id: i128) -> soroban_auth::Identifier;
+
+    /// Transfer token "id" from "from" to "to.
+    /// Emit event with topics = ["transfer", from: Identifier, to: Identifier], data = [id: i128]
+    fn xfer(
+        env: soroban_sdk::Env,
+        from: soroban_auth::Signature,
+        nonce: i128,
+        to: soroban_auth::Identifier,
+        id: i128,
+    );
+
+    /// Transfer token "id" from "from" to "to", consuming the allowance of "spender".
+    /// Emit event with topics = ["transfer", from: Identifier, to: Identifier], data = [id: i128]
+    fn xfer_from(
+        env: soroban_sdk::Env,
+        spender: soroban_auth::Signature,
+        from: soroban_auth::Identifier,
+        to: soroban_auth::Identifier,
+        nonce: i128,
+        id: i128,
+    );
+
+    /// If "admin" is the administrator, mint token "id" to "to".
+    /// Emit event with topics = ["mint", to: Identifier], data = [id: i128]
+    fn mint(
+        env: soroban_sdk::Env,
+        admin: soroban_auth::Signature,
+        nonce: i128,
+        to: soroban_auth::Identifier,
+        id: i128,
+        uri:soroban_sdk::Bytes
+    );
+
+    /// Mint the next token to "to" for demonstration.
+    /// Emit event with topics = ["mint", to: Identifier], data = [id: i128]
+    fn mint_next(env: soroban_sdk::Env, uri:soroban_sdk::Bytes);
+
+    /// If "admin" is the administrator or the token owner, burn token "id" from "from".
+    /// Emit event with topics = ["burn", from: Identifier], data = [id: i128]
+    fn burn(env: soroban_sdk::Env, admin: soroban_auth::Signature, nonce: i128, id: i128);
+
+    // --------------------------------------------------------------------------------
+    // Implementation Interface
+    // --------------------------------------------------------------------------------
+
+    /// Initialize the contract with "admin" as administrator, "name" as the name, and
+    /// "symbol" as the symbol.
+    fn initialize(
+        e: soroban_sdk::Env,
+        admin: soroban_auth::Identifier,
+        name: soroban_sdk::Bytes,
+        symbol: soroban_sdk::Bytes,
+    );
+}
+
+pub enum WriteType {
+    Add,
+    Remove,
+}
+
+
+
+================================================
+FILE: src/lib.rs
+================================================
+#![no_std]
+
+mod admin;
+mod approval;
+mod balance;
+mod contract;
+mod event;
+mod interface;
+mod metadata;
+mod owner;
+mod storage_types;
+
+pub use crate::contract::NonFungibleTokenClient;
+
+
+
+================================================
+FILE: src/metadata.rs
+================================================
+use crate::{ storage_types::DataKey};
+use soroban_sdk::{Bytes, Env};
+
+pub fn read_name(env: &Env) -> Bytes {
+    let key = DataKey::Name;
+    env.storage().get_unchecked(key).unwrap()
+}
+
+pub fn write_name(env: &Env, name: Bytes) {
+    let key = DataKey::Name;
+    env.storage().set(key, name)
+}
+
+pub fn read_symbol(env: &Env) -> Bytes {
+    let key = DataKey::Symbol;
+    env.storage().get_unchecked(key).unwrap()
+}
+
+pub fn write_symbol(env: &Env, symbol: Bytes) {
+    let key = DataKey::Symbol;
+    env.storage().set(key, symbol)
+}
+
+pub fn read_token_uri(env: &Env, id: i128) -> Bytes {
+    let key = DataKey::URI(id);
+    env.storage().get_unchecked(key).unwrap()
+}
+
+pub fn write_token_uri(env: &Env, id: i128, uri: Bytes) {
+    let key = DataKey::URI(id);
+    env.storage().set(key, uri)
+}
+
+
+
+
+
+================================================
+FILE: src/owner.rs
+================================================
+use crate::storage_types::DataKey;
+use soroban_auth::Identifier;
+use soroban_sdk::{BytesN, Env};
+
+pub fn zero_address(env: &Env) -> Identifier {
+    Identifier::Ed25519(BytesN::from_array(env, &[0u8; 32]))
+}
+
+pub fn read_owner(env: &Env, id: i128) -> Identifier {
+    let key = DataKey::Owner(id);
+    match env.storage().get(key) {
+        Some(balance) => balance.unwrap(),
+        None => zero_address(&env),
+    }
+}
+
+pub fn write_owner(env: &Env, id: i128, owner: Identifier) {
+    let key = DataKey::Owner(id);
+    env.storage().set(key, owner);
+}
+
+pub fn check_owner(env: &Env, auth: &Identifier, id: i128) {
+    assert!(
+        auth == &read_owner(env, id),
+        "not the owner for token {}",
+        id
+    );
+}
+
+
+
+================================================
+FILE: src/storage_types.rs
+================================================
+use soroban_auth::Identifier;
+use soroban_sdk::contracttype;
+
+#[derive(Clone)]
+#[contracttype]
+pub struct ApprovalAll {
+    pub operator: Identifier,
+    pub owner: Identifier,
+}
+
+#[derive(Clone)]
+#[contracttype]
+pub enum ApprovalKey {
+    All(ApprovalAll),
+    ID(i128),
+}
+
+#[derive(Clone)]
+#[contracttype]
+pub enum DataKey {
+    Balance(Identifier),
+    Nonce(Identifier),
+    Minted(Identifier),
+    Admin,
+    Name,
+    Symbol,
+    URI(i128),
+    Approval(ApprovalKey),
+    Owner(i128),
+    Supply,
+}
+
+
