@@ -1,0 +1,32 @@
+# Rust / Cargo
+target/
+Cargo.lock
+
+# Wasm build outputs
+*.wasm
+
+# Frontend (when added)
+node_modules/
+.next/
+dist/
+build/
+.turbo/
+
+# Environment files — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# Stellar CLI
+.stellar/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo

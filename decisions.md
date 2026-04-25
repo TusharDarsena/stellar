@@ -100,3 +100,34 @@
 **Why**: Simplest no-float approach that's readable. Basis points (dividing by 10000) adds precision that isn't needed for a fixed 10% rate.
 
 **Rejected**: Basis points (suggested by one reference AI, not matching actual Litemint implementation which also uses plain percentage).
+
+---
+
+## D-011 — soroban-sdk pinned at 25.3.1, not 21.0.0
+
+**Decided**: Workspace `Cargo.toml` pins `soroban-sdk = "25.3.1"`.
+
+**Why**: 21.0.0 is significantly out of date. Key API changes between 21 and 25 include `env.register()` replacing `env.register_contract()` in tests, and improved `extend_ttl` ergonomics. The initial AI-generated code was already written against 25.x patterns (`env.register`, `register_stellar_asset_contract_v2`). Backporting to 21 would require rewriting the test helpers.
+
+**Rejected**: 21.0.0 (what AGENTS.md originally said — updated to match reality).
+
+---
+
+## D-012 — MarketplaceAddress stored in instance() not persistent()
+
+**Decided**: `DataKey::MarketplaceAddress` uses `env.storage().instance()`.
+
+**Why**: The AGENTS.md convention "use `persistent()` unless data truly lives for the contract lifetime only" explicitly carves out this exception. MarketplaceAddress IS contract-lifetime data — it is set once at `initialize()` and never changes. Using `instance()` is semantically correct and avoids the need for a separate `extend_ttl` call. All other contract state (Events, Tickets, Escrow) uses `persistent()`.
+
+**Rejected**: Moving MarketplaceAddress to `persistent()` — technically works but is semantically wrong. `instance()` signals "this lives as long as the contract does."
+
+---
+
+## D-013 — React + Vite for frontend, not Next.js
+
+**Decided**: Frontend will be built with React + Vite.
+
+**Why**: This is a hackathon demo — no SSR, no server components, no API routes needed at the framework level. The server/client transaction split (D-007) is implemented via a lightweight Express or Hono server alongside Vite, not Next.js API routes. Vite is simpler to configure, faster to dev-iterate, and has no framework-imposed opinions on routing.
+
+**Rejected**: Next.js 14 App Router (what the docs originally assumed). The frontend_readme.md and AGENTS.md frontend section reference Next.js — these will be updated when frontend work begins.
+

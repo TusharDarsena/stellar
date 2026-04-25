@@ -29,7 +29,7 @@ NFT event ticketing on Stellar. Two Soroban smart contracts + a Next.js frontend
 |---|---|
 | `README.md` | Human-facing project overview. Stack, commands, directory map. |
 | `AGENTS.md` | This file. AI context. File responsibilities. Conventions. Anti-patterns. |
-| `Cargo.toml` | Workspace root. Declares `members = ["contracts/*"]`. Pins `soroban-sdk = "21.0.0"`. Contains `[profile.release]` block. Do not add per-contract SDK pins. |
+| `Cargo.toml` | Workspace root. Declares `members = ["contracts/*"]`. Pins `soroban-sdk = "25.3.1"`. Contains `[profile.release]` block. Do not add per-contract SDK pins. |
 
 ### docs/
 
