@@ -1,165 +1,269 @@
 # Reference Repo Usage Guide
-*For AI coding context. These repos are studied, not copied. Each entry says what's useful, what's wrong, and what gap you must fill yourself.*
+*For AI coding context. These repos are studied, not copied. Each entry says what is useful, what is wrong or broken, and what you must build from scratch.*
 
 ---
 
 ## Repo 1: sahityaroy/nft-soroban
 
-**What it is**: A hand-rolled ERC721-style NFT contract for Soroban. Minimal, no frontend, no backend.
+**What it is**: A hand-rolled ERC721-style NFT contract for Soroban. Minimal, no frontend.
 
-**SDK version**: `soroban-sdk = "0.4.3"` with `soroban-auth = "0.4.3"`. This is a pre-release API from ~2022. The `soroban-auth` crate no longer exists. Do not reference any auth, nonce, or Signature code from this repo.
+**SDK version**: `soroban-sdk = "0.4.3"` with `soroban-auth = "0.4.3"`. This is a pre-release API from 2022. The `soroban-auth` crate no longer exists. Do not reference any auth, nonce, or Signature code from this repo.
 
-### Use it for
+### Use for
 
-**DataKey enum pattern** (`storage_types.rs`): The structure of using a typed enum as storage keys is the correct Soroban pattern and hasn't changed. The shape — `DataKey::Owner(i128)`, `DataKey::Balance(Address)`, `DataKey::URI(i128)` — maps directly to what you need. Design your own DataKey enum following this structure.
+**DataKey enum shape** (`storage_types.rs`): The pattern of a typed enum as storage keys is still correct. `DataKey::Owner(i128)`, `DataKey::Balance(Address)`, `DataKey::URI(i128)` — this structural shape maps to your `DataKey::Ticket(Symbol)`, `DataKey::Event(Symbol)`, `DataKey::Escrow(Symbol)`. Use it as syntax reference only.
 
-**NFT function surface** (`interface.rs`): Good checklist. Your TicketContract needs equivalents of: initialize, mint (your version = purchase), transfer (your version = restricted_transfer), burn (your version = refund/mark_used), owner(id), balance(address). The interface gives you the function vocabulary even though the implementation is outdated.
+**NFT function vocabulary** (`interface.rs`): Good mental checklist. Your TicketContract needs equivalents of: initialize, mint (your version = purchase), transfer (your version = restricted_transfer), burn (your version = refund), owner(id), balance(address). The interface gives you function names even though the implementation is entirely outdated.
 
-**File organization** (`lib.rs` as module root, separate files per concern): Clean pattern. One file per logical domain (storage_types, events, admin, etc.) rather than one giant lib.rs.
+**File decomposition idea**: One file per logical domain — storage_types, events, admin — rather than one monolithic lib.rs. Follow this.
 
 ### Do not use
 
-- Any auth code (`admin.rs`, the `Signature` type, `verify_and_consume_nonce`, `soroban_auth::verify`)
-- The `Identifier` type (replaced by `Address` in modern SDK)
-- The `check_admin` / `check_owner` pattern with Signatures — modern equivalent is `address.require_auth()`
+Everything else. Specifically:
+- `admin.rs`, `approval.rs` — the `Signature` type and `soroban_auth::verify` do not exist in modern SDK
+- `Identifier` type — replaced by `Address`
 - The nonce system — `require_auth()` handles replay protection internally now
-- `env.storage().has()` / `env.storage().get_unchecked()` — modern API uses `env.storage().instance().has()` / `env.storage().persistent().get()`
+- `env.storage().has()` / `env.storage().get_unchecked()` — modern API is `env.storage().persistent().has()` / `env.storage().persistent().get()`
+- `check_admin` / `check_owner` pattern with Signatures — modern equivalent is `address.require_auth()`
+- Any panic-based error handling — use `Result<T, ContractError>` with `#[contracterror]` instead
 
 ---
 
 ## Repo 2: josectoscano/entryx
 
-**What it is**: A full-stack Next.js + Soroban app for event ticketing with SAC-based tickets and an auction-based resale market. The closest reference to what you're building.
+**What it is**: Full-stack Next.js + Soroban event ticketing with SAC-based tickets and auction resale.
 
-**SDK version**: `soroban-sdk = "21.0.0"` (workspace), per-contract using `{ workspace = true }`.
+**SDK version**: `soroban-sdk = "21.0.0"` — matches what you are pinning.
 
-### Critical corrections before using this repo
+### Critical bugs in this repo — do not copy
 
-**The auction contract does NOT demonstrate inter-contract calls from Marketplace to TicketContract.** It uses `token::Client::new(&env, &sac_address)` to call the SAC directly. There is no cross-contract call between their two contracts. You must build the restricted_transfer inter-contract call from scratch — it doesn't exist here to copy.
-
-**There is no escrow in EntryX.** `purchase()` immediately transfers XLM to issuer and distributor in the same transaction. Your escrow vault (hold funds until after event date) is a design decision that exists in your plan but not in any reference repo. Build it yourself.
-
-### Use it for
-
-**Workspace Cargo.toml** (`soroban-contracts/Cargo.toml`): Copy the structure exactly.
+**Wrong stroop multiplier.** Their `purchase()` uses:
+```rust
+let purchase_total = buy_amount.clone() * 100000;
 ```
+`100000` is five zeros. The correct stroop multiplier is `10_000_000` — seven zeros. 1 XLM = 10,000,000 stroops. This is a bug in their production contract. Every XLM calculation you write must use `10_000_000`.
+
+**XOR operator used instead of exponentiation** in `ticket_auction/src/lib.rs`:
+```rust
+starting_price: (starting_price.clone() ^ 100),
+```
+`^` in Rust is bitwise XOR, not exponentiation. This produces completely wrong values. Ignore the entire auction contract file.
+
+**No escrow.** Their `purchase()` pulls XLM in and immediately pays it back out in the same transaction:
+```rust
+xlm.transfer(&buyer, &contract, &purchase_total);  // pull in
+xlm.transfer(&contract, &issuer, &amount_to_issuer);  // push out immediately
+xlm.transfer(&contract, &distributor, &amount_to_distributor);  // push out immediately
+```
+Your architecture holds XLM in the contract until after the event date. This is the architectural opposite of what you need. Do not use their purchase logic.
+
+**No inter-contract call.** Their two contracts never call each other. `token::Client::new(&env, &sac_address)` calls the Stellar Asset Contract standard interface, not a cross-contract call to their own ticket contract. You must build the MarketplaceContract → TicketContract call from scratch. It does not exist in this repo to copy.
+
+### Use for
+
+**Workspace Cargo.toml structure** (`soroban-contracts/Cargo.toml`): Copy the structure.
+```toml
 [workspace]
 resolver = "2"
 members = ["contracts/*"]
 
 [workspace.dependencies]
 soroban-sdk = "21.0.0"
-
-[profile.release]
-opt-level = "z"
-overflow-checks = true
-...
 ```
-Individual contract Cargo.toml files reference `soroban-sdk = { workspace = true }`. This prevents version drift.
+Per-contract Cargo.toml files use `soroban-sdk = { workspace = true }`. This prevents version drift.
 
-**Modern auth pattern** (`ticket/src/lib.rs`): Uses `buyer.require_auth()` — that's the correct modern pattern. No Signatures, no nonces, no soroban-auth crate.
+**`[profile.release]` block**: Copy verbatim into your workspace Cargo.toml.
 
-**token::Client for XLM transfers** (`ticket/src/lib.rs`): `token::Client::new(&env, &native_address)` is how you pull XLM from a buyer into the contract. The `native_address` is the XLM SAC address on testnet. Study how they compute `purchase_total = buy_amount * 100000` — stroops conversion is important and easy to get wrong.
+**Modern auth pattern**: `buyer.require_auth()` at the top of functions that need it. No Signatures, no nonces, no soroban-auth crate.
 
-**TransactionBuilder + simulate-before-submit** (`src/lib/soroban.ts`): The pattern of building a transaction, calling `simulateTransaction` on it to get the correct fee, then submitting — is correct and must not be skipped. Don't copy the file; understand the three-step flow.
+**`token::Client` for XLM transfers**:
+```rust
+let xlm = token::Client::new(&env, &native_token_address);
+xlm.transfer(&buyer, &env.current_contract_address(), &amount_in_stroops);
+```
+This is how you pull XLM from a buyer into the contract's own account (escrow). The `native_token_address` is the XLM SAC address on testnet. Study the shape, not the arithmetic — their arithmetic is wrong.
 
-**Server/client split** (`src/server/api/routers/soroban.ts`): Server builds and simulates. Client signs. Server submits. Follow this split to avoid sequence number race conditions.
+**`soroban.ts` simulate-before-submit pattern** (`src/lib/soroban.ts`): The three-step flow — build transaction, call `simulateTransaction` to get correct fee, then submit — is correct and must not be skipped. Study `getContractXDR` and `callWithSignedXDR` as the server-side split model.
 
-**Friendbot call for testnet wallets** (`src/server/api/routers/stellar-account.ts`): Every new WaaS wallet address needs Friendbot funding before it can hold or send assets. This file shows the exact Horizon call. Run this immediately after Web3Auth creates a new keypair.
+**`stellar.toml` structure** (`public/.well-known/stellar.toml`): You need one. Copy the structure, replace every field with your project values. Without it your asset shows as "unknown" in wallets.
 
-**stellar.toml** (`public/.well-known/stellar.toml`): You need one. Copy the structure, replace every field with your project details. Without it, your asset shows as "unknown" in wallets.
+**`useWallet.ts` hook shape** (`src/hooks/useWallet.ts`): The Freighter integration — connect, store public key, sign transactions. Study the hook shape for your organizer flow. For attendees, replace Freighter-specific calls with Web3Auth SDK equivalents. The hook interface stays the same.
 
-**fill_sac.cjs deployment sequence** (`scripts/fill_sac.cjs`): Read to understand the deployment order — create asset → deploy contract → store contract address. Adapt the order for your setup (deploy TicketContract → deploy MarketplaceContract with ticket address → initialize TicketContract with marketplace address).
+**Server/client transaction split** (`src/server/api/routers/soroban.ts`): Server builds and simulates. Client signs. Server submits. This split prevents sequence number race conditions.
 
-**Prisma schema as a checklist** (`prisma/schema.prisma`): You're not running Prisma for MVP. But the schema tells you what persistent data matters: `sacAddress` on Asset (= your contract_address), event status enum, distributor/issuer separation. Use it as a checklist when you do add a database layer.
-
-**wallet.ts challenge-response pattern** (`src/server/api/routers/wallet.ts`): Shows how to verify that a user actually owns the wallet address they claim (sign a known message, verify server-side). For WaaS attendees, this pattern is how you confirm their wallet before issuing a ticket.
-
-**useWallet.ts** (`src/hooks/useWallet.ts`): This is the Freighter integration — connecting wallet, storing public key, signing transactions. Study it as your "before" picture for the organizer flow. For attendees, replace the Freighter-specific calls with WaaS SDK equivalents — the hook shape stays the same.
-
-**passkey/ components** (`src/app/passkey/`): Do not port this to your app. WaaS replaces what they were attempting. Study `stellar-wallet.tsx` only to understand what operations a wallet abstraction needs to support (generate keypair, sign message, sign transaction). That's your WaaS integration surface.
+**Friendbot funding pattern** (`src/server/api/routers/stellar-account.ts`): Every new Web3Auth wallet address needs Friendbot funding before it can transact on testnet. Run this immediately after Web3Auth creates a new keypair. The file shows the exact Horizon call.
 
 ### Do not use
 
 - SAC-based ticket architecture — you use custom NFT for transfer control
-- The immediate XLM disbursement on purchase — you hold in escrow instead
-- The auction contract as an inter-contract call example — it isn't one
+- Their purchase/stroop arithmetic — it contains the 100000 bug described above
+- The auction contract (`ticket_auction/src/lib.rs`) — contains the XOR bug, ignore entirely
+- The immediate XLM disbursement pattern — you hold in escrow instead
 
 ---
 
 ## Repo 3: litemint/litemint-soroban-contracts
 
-**What it is**: Production-grade Soroban contracts for auctions and royalty enforcement from the Litemint NFT marketplace.
+**What it is**: Production Soroban contracts for timed auctions and royalty enforcement from the Litemint NFT marketplace.
 
-**SDK version**: `soroban-sdk = "20.3.1"`. One version behind EntryX. Both are modern API — no soroban-auth, uses Address and require_auth.
+**SDK version**: `soroban-sdk = "20.3.1"` — one minor version behind what you are pinning. All patterns are valid, all APIs are compatible.
 
-### Use it for
+### Use for
 
-**[profile.release] block** (root `Cargo.toml`): Copy verbatim into your workspace Cargo.toml. `opt-level = "z"`, `overflow-checks = true`, `debug = 0`, `strip = "symbols"`, `panic = "abort"`, `codegen-units = 1`, `lto = true`. These minimize wasm binary size, which reduces deployment cost.
+**`[profile.release]` block** (root `Cargo.toml`): Copy verbatim. `opt-level = "z"`, `overflow-checks = true`, `debug = 0`, `strip = "symbols"`, `panic = "abort"`, `codegen-units = 1`, `lto = true`. These minimize wasm binary size, reducing deployment cost.
 
-**Royalty calculation pattern** (`crates/litemint-royalty-contract/src/agreement/compensation_percentage.rs`): The actual calculation divides by 100 (plain percentage, not basis points — the rate stored as 10 means 10%). Uses checked_mul and checked_div to avoid overflow panics. No floats anywhere. Pattern:
+**Checked arithmetic with ceiling division** (`crates/litemint-royalty-contract/src/agreement/impl.rs`):
+```rust
+let admin_share = bid.amount
+    .checked_mul(commission_rate)
+    .and_then(|val| val.checked_add(99))
+    .and_then(|val| val.checked_div(100))
+    .unwrap()
+    .max(1);
+let seller_share = bid.amount.checked_sub(admin_share).unwrap().max(1);
 ```
-royalty = price.checked_mul(rate).and_then(|v| v.checked_div(100)).unwrap()
+The `.checked_add(99)` before dividing by 100 is ceiling division — it prevents the fee from rounding down to zero on small amounts. Use this exact pattern for your royalty split in MarketplaceContract. Always use `checked_mul`, `checked_add`, `checked_sub`, `checked_div`. Never raw arithmetic on `i128`.
+
+**Test scaffold pattern** (`crates/litemint-auction-contract/src/test.rs`): This is the best test setup across all four repos. The pattern:
+```rust
+fn create_token_contract<'a>(e: &Env, admin: &Address) -> (TokenClient<'a>, TokenAdminClient<'a>) {
+    let contract_address = e.register_stellar_asset_contract(admin.clone());
+    (
+        TokenClient::new(e, &contract_address),
+        TokenAdminClient::new(e, &contract_address),
+    )
+}
+
+fn create_auction_contract(e: &Env) -> AuctionContractClient {
+    AuctionContractClient::new(e, &e.register_contract(None, AuctionContract {}))
+}
 ```
-Use this approach. Don't use regular multiplication on i128 without checked_ variants — silent overflow in contracts is catastrophic.
+Copy this scaffold structure directly into your `test.rs` files. Replace `AuctionContract` with `TicketContract` or `MarketplaceContract`. This gives you a real token + your contract in a simulated environment without a running node. In SDK 21, `register_contract` is the correct call (not `register` which is the SDK 23 API from trustless-work).
 
-**Test scaffold pattern** (`crates/litemint-auction-contract/src/test.rs`): This is the most useful thing in Litemint for you. How they register a test token, fund addresses, deploy the contract, call functions, and assert storage state — all in a simulated Soroban environment without running a node. Copy the scaffold structure (not the test cases) into your own contract's test.rs. Writing tests this way means you can catch escrow logic bugs before touching testnet.
+**Multi-party fund distribution pattern** (`crates/litemint-auction-contract/src/auctions/behavior.rs` → `finalize()`): The structure of iterating over all parties, transferring tokens, and cleaning up state in one function is the model for your `release_funds()`. Study how it cancels losing bids while paying the winner.
 
-**Types pattern** (`crates/litemint-royalty-contract/src/types.rs`): Shows how to define complex nested contracttypes with enums as storage keys. Your event status enum and ticket record will follow this pattern. Note: their License struct is more complex than you need — use it as a reference for syntax, not structure.
+**`extend_ttl` on every persistent write**: Both Litemint and trustless-work do this consistently. Soroban persistent storage expires — if you do not extend the TTL, your contract data disappears. After every `env.storage().persistent().set(...)` call, immediately add:
+```rust
+env.storage().persistent().extend_ttl(&your_key, 17280, 17280);
+```
+17280 ledgers ≈ 1 day at ~5 seconds per ledger. For long-lived escrow data, use a larger value. trustless-work uses `31536000` for the maximum. Pick based on how long you need the data to survive. This is not optional.
 
-**GitHub Actions CI** (`.github/workflows/rust.yml`): Copy the file. Change `actions/checkout@v3` to `actions/checkout@v4`. This handles `cargo build` and `cargo test` on every push to main. That's the hackathon CI requirement satisfied. Add a second job for frontend deployment separately — don't put it in the same workflow file.
+**GitHub Actions CI** (`.github/workflows/rust.yml`): Copy the file. Change `actions/checkout@v3` to `actions/checkout@v4`. It runs `cargo build` and `cargo test` on every push. This satisfies the hackathon CI requirement.
+
+**Types pattern** (`crates/litemint-royalty-contract/src/types.rs`): Shows correct syntax for nested `#[contracttype]` structs with derive macros. Use as syntax reference for your `Event`, `Ticket`, `EventStatus` definitions. Do not copy the License/Terms/Compensation system — too complex for your needs.
 
 ### Do not use
 
-- The full License/Terms/Compensation system — too complex for your royalty needs. You need one royalty_rate on the MarketplaceContract, not a multi-party licensing agreement
-- The auction logic — different use case entirely
-- The `soroban_kit` crate dependency — that's a Litemint-internal utility, you don't have it
+- The `soroban_kit` crate dependency — Litemint-internal, you do not have it. Use `env.storage().persistent()` directly
+- The auction logic itself — different use case
+- The full License/Terms/Compensation royalty system — you only need a single `royalty_rate` integer
+
+---
+
+## Repo 4: trustless-work/trustless-work-smart-escrow
+
+**What it is**: A production Soroban escrow contract with milestone-based fund release, dispute resolution, and fee distribution. The most architecturally relevant repo for your escrow vault design.
+
+**SDK version**: `soroban-sdk = "23.1.1"` — newer than what you are pinning. Do not copy Cargo.toml dependency versions from this repo. All logic patterns are valid but some API calls differ slightly.
+
+**SDK 23 vs SDK 21 API difference to watch**: Their test helpers use `env.register(EscrowContract {}, ())`. In SDK 21 this is `e.register_contract(None, YourContract {})` as Litemint uses. Do not copy their test registration line directly.
+
+### Use for
+
+**`#[contracterror]` enum pattern** (`src/error.rs`): Copy this pattern exactly.
+```rust
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[contracterror]
+pub enum ContractError {
+    AmountCannotBeZero = 1,
+    EscrowNotFound = 3,
+    // ...
+}
+```
+Every function returns `Result<T, ContractError>` and uses `?` for propagation. This is cleaner than panic-based error handling. Define your `ContractError` before writing any functions — every function signature depends on it.
+
+**Flags / state struct pattern** (`src/storage/types.rs`):
+```rust
+pub struct Flags {
+    pub disputed: bool,
+    pub released: bool,
+    pub resolved: bool,
+}
+```
+Your `EventStatus` enum (Active/Cancelled/Completed) serves the same purpose. Study how they use flags to gate execution in validator functions — every function checks flags before doing anything.
+
+**Validator separation pattern** (`src/core/validators/`): Business rule checks are in separate `validate_*` functions that return `Result<(), ContractError>`. The main function calls the validator, then does `address.require_auth()`, then executes. This order matters — validate first, auth second, execute third. Do not put `require_auth()` before validation.
+
+**`validate_release_conditions` pattern** (`src/core/validators/escrow.rs`): This is exactly the shape your `release_funds()` validation needs:
+```rust
+if escrow.flags.released { return Err(ContractError::EscrowAlreadyReleased); }
+if escrow.flags.resolved { return Err(ContractError::EscrowAlreadyResolved); }
+if !escrow.milestones.iter().all(|m| m.approved) { return Err(ContractError::EscrowNotCompleted); }
+if escrow.flags.disputed { return Err(ContractError::EscrowOpenedForDisputeResolution); }
+```
+Your equivalent checks: event not already released, `env.ledger().timestamp() > event.date_unix`, contract balance >= expected amount, event not cancelled.
+
+**Fee distribution math** (`src/modules/fee/calculator.rs`):
+```rust
+const TRUSTLESS_WORK_FEE_BPS: u32 = 30;
+const BASIS_POINTS_DENOMINATOR: i128 = 10000;
+
+let fee = amount
+    .checked_mul(fee_bps.into())
+    .ok_or(ContractError::Overflow)?
+    .checked_div(BASIS_POINTS_DENOMINATOR)
+    .ok_or(ContractError::DivisionError)?;
+```
+They use basis points (divide by 10000) for precision. Your `decisions.md` D-010 says to use plain percentage (divide by 100). Both work. What matters is consistency — pick one and never mix them. If royalty_rate = 10 means 10%, divide by 100. If royalty_rate = 1000 means 10%, divide by 10000. Document which you chose.
+
+**`extend_ttl` usage**: Confirmed consistently throughout. After every persistent write:
+```rust
+e.storage().persistent().extend_ttl(&DataKey::Escrow, 17280, 31536000);
+```
+This matches Litemint's pattern. Both repos do it this way. It is not optional.
+
+**Test structure** (`src/tests/`): The separation of tests into focused files — `escrow.rs`, `fund.rs`, `dispute.rs`, `milestone.rs` — is a clean pattern. Adapt it: `ticket.rs`, `escrow.rs`, `marketplace.rs`.
+
+**`fund_escrow` state verification pattern** (`src/core/validators/escrow.rs` → `validate_fund_escrow_conditions`): Before accepting XLM, verify that the stored escrow state matches what the caller expects:
+```rust
+if !stored_escrow.eq(&expected_escrow) {
+    return Err(ContractError::EscrowPropertiesMismatch);
+}
+```
+This prevents race conditions where escrow state changes between when the user reads it and when they fund it. Your `purchase()` is atomic so the exact risk is lower, but the principle of verifying state before accepting tokens is correct.
+
+### Do not use
+
+- Cargo.toml dependency versions — SDK 23.1.1, do not copy
+- `env.register(Contract {}, ())` test API — use `e.register_contract(None, Contract {})` for SDK 21
+- The multi-milestone architecture — your escrow is per-event not per-milestone
+- The dispute resolution system — out of scope for your MVP
 
 ---
 
 ## What no reference repo covers — build from scratch
 
-These are gaps. No repo here shows them. You write them without reference.
+These are genuine gaps. No repo here shows them. You write them without reference.
 
-**Escrow vault logic**: Holding XLM inside the contract and releasing it based on timestamp is not in any repo. The mechanism: when `purchase()` is called, instead of forwarding XLM to the organizer, keep it in the contract (it stays in the contract's own Stellar account). Track the amount per event in storage. `release_funds()` checks `env.ledger().timestamp() > event.date_unix` then transfers.
+**Escrow vault — holding XLM until event date**: When `purchase()` is called, do not forward XLM anywhere. Let it accumulate in the contract's own Stellar account via `token::Client.transfer(&buyer, &env.current_contract_address(), &amount)`. Track the held amount per event in your `escrow.rs`. `release_funds()` checks `env.ledger().timestamp() > event.date_unix` then transfers the full amount minus fees to the organizer.
 
-**Restricted transfer gated by contract address**: Your TicketContract.restricted_transfer checks `env.current_contract_address() != caller` — actually, you store the marketplace address at init and check `caller == stored_marketplace_address`. The call from MarketplaceContract to TicketContract uses the generated client type from `contractclient` macro.
+**Restricted transfer gated by stored address**: `restricted_transfer()` checks `caller == stored_marketplace_address` where `stored_marketplace_address` was set once at `initialize()`. If the check fails, panic. This is the transfer gate that no reference repo implements.
 
-**Inter-contract call setup**: When MarketplaceContract needs to call TicketContract, it uses the client type generated from your TicketContract. The pattern:
+**Inter-contract call from Marketplace to Ticket**: When `buy_listing()` executes, it calls TicketContract to transfer ownership. The pattern uses the generated client type:
 ```rust
 let ticket_client = TicketContractClient::new(&env, &self.get_ticket_contract_address(&env));
-ticket_client.restricted_transfer(&ticket_id, &new_owner);
+ticket_client.restricted_transfer(&ticket_id, &buyer);
 ```
-This is standard Soroban cross-contract invocation. No reference repo shows this exact pattern for your use case — it must be written fresh.
+`TicketContractClient` is auto-generated by the `#[contractclient]` macro when you build your TicketContract. Do not use `env.invoke_contract()` directly — use the generated client.
 
-**QR signing and verification**: No repo touches this. The signing uses the WaaS wallet's `signMessage()` equivalent. Verification at the scanner uses Stellar JS SDK's `Keypair.verify(message_bytes, signature_bytes)`. This is entirely frontend logic — no contract call required for the signature check itself.
+**QR payload signing and verification**: No contract involvement. Frontend only. `signMessage()` from the WaaS wallet signs `{wallet_address}:{ticket_id}:{timestamp}`. Scanner verifies using Stellar JS SDK's `Keypair.verify(message_bytes, base64_decode(signature))`. This is entirely client-side — no RPC call needed for the signature check. See `decisions.md` D-006 for the absolute timestamp requirement.
 
-**Web3Auth integration**: None of these repos use WaaS. The integration surface is: initialize Web3Auth with Stellar network params, get keypair on login, expose sign_message and sign_transaction methods, wrap in a hook that matches the shape of EntryX's useWallet.ts.
+**Web3Auth integration**: None of these repos use WaaS. The integration surface: initialize Web3Auth with Stellar network config, get a Stellar keypair on Google login, expose `signMessage` and `signTransaction` methods, wrap in a hook that matches the shape of entryx's `useWallet.ts`. The private key never leaves the Web3Auth SDK.
 
-**Cancellation + per-ticket refund**: Not in any repo. The logic: mark event Cancelled, then each ticket holder individually calls refund(ticket_id). The contract checks event.status == Cancelled, ticket.owner == caller, returns price_per_ticket from escrow, burns ticket. Do not try to loop over all ticket holders in one transaction.
+**Pull-based refund on cancellation**: When an event is cancelled, do not loop over ticket holders. Each attendee individually calls `refund(ticket_id)`. The contract checks `event.status == Cancelled`, `ticket.owner == caller`, returns `price_per_ticket` stroops from the escrow balance, sets `ticket.used = true`. A second call on the same ticket fails because `used == true`. Looping over all holders in one transaction hits Soroban instruction limits — see `decisions.md` D-002.
 
 ---
 
-## SDK version to use
+## SDK version
 
-Start with `soroban-sdk = "21.0.0"` matching EntryX. Do not jump to a higher version mid-hackathon unless you hit a specific blocker that requires it. Version stability during a hackathon matters more than being on the latest patch.
-
-Verify actual available versions at crates.io/crates/soroban-sdk before setting this. The AI that suggested "22.0.0" did not verify this.
-
----
-
-## File naming convention
-
-Follow EntryX: `contracts/` directory at the workspace root, one subdirectory per contract, each with its own `Cargo.toml` and `src/lib.rs`. Your workspace will have:
-
-```
-contracts/
-  ticket/
-    Cargo.toml
-    src/lib.rs
-  marketplace/
-    Cargo.toml
-    src/lib.rs
-```
-
-This matches the workspace members pattern `["contracts/*"]` exactly.
+Use `soroban-sdk = "21.0.0"` matching entryx. Do not upgrade mid-project unless you hit a specific blocker. Verify availability at crates.io/crates/soroban-sdk before setting.
