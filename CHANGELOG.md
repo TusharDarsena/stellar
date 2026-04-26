@@ -44,3 +44,23 @@ Currently warnings only. Will address when writing the marketplace contract.
 - Marketplace contract implementation
 - `scripts/deploy.sh` and `scripts/fund.sh`
 - Frontend (React + Vite) — after contracts deployed
+
+---
+
+## Session 2 — 2026-04-26
+
+### Context
+Following up on the initial scaffold, identified several architectural and security improvements for the `TicketContract` before moving on to the marketplace.
+
+### Decisions logged
+- **D-014** — `xlm_token` is now stored in `instance()` at `initialize` rather than being provided by the caller, preventing fake-token escrow drain attacks.
+- **D-015** — Instance storage TTL is extended on every write (`initialize`) to prevent expiration and unauthorized re-initialization.
+- **D-016** — CEI (Check-Effects-Interactions) ordering enforced in `purchase`, `refund`, and `release_funds`. All state and escrow updates occur before external token transfers.
+- **D-017** — `create_event` now validates capacity > 0, price > 0, and date in the future.
+- **D-018** — Replaced `Ticket.used: bool` with `TicketStatus { Active, Used, Refunded }` enum for clearer on-chain history.
+- **D-019** — Added `get_xlm_token()` public read-only method for frontend transparency.
+
+### What was built
+- Refactored `TicketContract` (`lib.rs` and `types.rs`) to implement the above decisions.
+- Storage helpers updated to support `xlm_token` reads and writes, including TTL extensions.
+- Modified tests to align with the new signatures (`purchase`, `refund`, `release_funds` no longer take `xlm_token` as an argument; `TicketStatus` assertions instead of `used` booleans).
