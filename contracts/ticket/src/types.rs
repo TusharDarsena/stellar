@@ -16,15 +16,33 @@ pub enum DataKey {
     /// NOTE: Stored in instance() storage — not persistent() — because this IS
     /// contract-lifetime data. See decisions.md D-012.
     MarketplaceAddress,
+    /// The trusted XLM SAC address. Set once at initialize().
+    /// Never supplied by callers — prevents fake-token escrow drain (S-001).
+    XlmToken,
 }
 
 /// Event status lifecycle.
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 #[contracttype]
 pub enum EventStatus {
     Active,
     Cancelled,
     Completed,
+}
+
+/// Ticket status lifecycle.
+/// Kept as a three-variant enum rather than a bool so on-chain history can
+/// distinguish a scanned ticket (Used) from a refunded one (Refunded).
+/// Changing this after data lands on-chain requires a storage migration — do it now.
+#[derive(Clone, PartialEq, Debug)]
+#[contracttype]
+pub enum TicketStatus {
+    /// Ticket is valid and has not been used or refunded.
+    Active,
+    /// Ticket was scanned at the venue door via mark_used.
+    Used,
+    /// Ticket was refunded because the event was cancelled.
+    Refunded,
 }
 
 /// Full event record stored on-chain.
@@ -54,6 +72,8 @@ pub struct Ticket {
     pub owner: Address,
     /// Which event this ticket belongs to
     pub event_id: Symbol,
-    /// Whether this ticket has been scanned/used at the door
-    pub used: bool,
+    /// Lifecycle state: Active → Used (scanned) or Refunded (event cancelled).
+    /// Never use a bool here — on-chain data is permanent and analytics must
+    /// distinguish the two terminal states. See D-018.
+    pub status: TicketStatus,
 }

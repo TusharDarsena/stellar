@@ -61,16 +61,16 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "symbol": "event1"
+                  "symbol": "event7"
                 },
                 {
-                  "symbol": "Concert"
+                  "symbol": "DupTest"
                 },
                 {
                   "u64": "86400"
                 },
                 {
-                  "i128": "100"
+                  "i128": "10"
                 },
                 {
                   "i128": "10000000"
@@ -92,13 +92,13 @@
               "function_name": "purchase",
               "args": [
                 {
-                  "symbol": "event1"
+                  "symbol": "event7"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "symbol": "ticket1"
+                  "symbol": "dup"
                 }
               ]
             }
@@ -128,8 +128,6 @@
         }
       ]
     ],
-    [],
-    [],
     [],
     []
   ],
@@ -257,7 +255,7 @@
                     "symbol": "Escrow"
                   },
                   {
-                    "symbol": "event1"
+                    "symbol": "event7"
                   }
                 ]
               },
@@ -284,7 +282,7 @@
                     "symbol": "Event"
                   },
                   {
-                    "symbol": "event1"
+                    "symbol": "event7"
                   }
                 ]
               },
@@ -296,7 +294,7 @@
                       "symbol": "capacity"
                     },
                     "val": {
-                      "i128": "100"
+                      "i128": "10"
                     }
                   },
                   {
@@ -320,7 +318,7 @@
                       "symbol": "name"
                     },
                     "val": {
-                      "symbol": "Concert"
+                      "symbol": "DupTest"
                     }
                   },
                   {
@@ -372,7 +370,7 @@
                     "symbol": "Ticket"
                   },
                   {
-                    "symbol": "ticket1"
+                    "symbol": "dup"
                   }
                 ]
               },
@@ -384,7 +382,7 @@
                       "symbol": "event_id"
                     },
                     "val": {
-                      "symbol": "event1"
+                      "symbol": "event7"
                     }
                   },
                   {

@@ -12,7 +12,7 @@ mod test;
 use soroban_sdk::{contract, contractimpl, token, Address, Env, Symbol};
 
 use crate::error::ContractError;
-use crate::types::{Event, EventStatus, Ticket};
+use crate::types::{Event, EventStatus, Ticket, TicketStatus};
 
 #[contract]
 pub struct TicketContract;
@@ -23,13 +23,20 @@ impl TicketContract {
     // Initialization
     // -----------------------------------------------------------------------
 
-    /// Set the one marketplace address allowed to call restricted_transfer.
+    /// Set the one marketplace address allowed to call restricted_transfer,
+    /// and the trusted XLM SAC token address.
     /// Can only be called once.
-    pub fn initialize(env: Env, marketplace_address: Address) -> Result<(), ContractError> {
+    pub fn initialize(
+        env: Env,
+        marketplace_address: Address,
+        xlm_token: Address,
+    ) -> Result<(), ContractError> {
         if storage::has_marketplace_address(&env) {
             return Err(ContractError::AlreadyInitialized);
         }
         storage::write_marketplace_address(&env, &marketplace_address);
+        // Store the trusted XLM token once — callers never supply it again (S-001).
+        storage::write_xlm_token(&env, &xlm_token);
         Ok(())
     }
 
@@ -51,6 +58,16 @@ impl TicketContract {
 
         if storage::has_event(&env, &event_id) {
             return Err(ContractError::EventAlreadyExists);
+        }
+        // Validate inputs — zero/negative values produce economically broken events.
+        if capacity <= 0 {
+            return Err(ContractError::InvalidCapacity);
+        }
+        if price_per_ticket <= 0 {
+            return Err(ContractError::InvalidPrice);
+        }
+        if date_unix <= env.ledger().timestamp() {
+            return Err(ContractError::EventDateInPast);
         }
 
         let event = Event {
@@ -96,15 +113,19 @@ impl TicketContract {
     // -----------------------------------------------------------------------
 
     /// Purchase a ticket. Pulls price_per_ticket XLM from buyer into escrow.
-    /// `xlm_token` is the XLM SAC address on the current network.
+    /// Token address is read from contract storage — never trusted from caller (S-001).
     pub fn purchase(
         env: Env,
         event_id: Symbol,
         buyer: Address,
         ticket_id: Symbol,
-        xlm_token: Address,
     ) -> Result<(), ContractError> {
         buyer.require_auth();
+
+        // Reject duplicate ticket IDs — overwriting an existing ticket loses ownership (#1).
+        if storage::has_ticket(&env, &ticket_id) {
+            return Err(ContractError::TicketAlreadyExists);
+        }
 
         let mut event = storage::read_event(&env, &event_id)?;
 
@@ -115,30 +136,32 @@ impl TicketContract {
             return Err(ContractError::EventCapacityExceeded);
         }
 
-        // Pull XLM from buyer into contract (escrow). price_per_ticket is in stroops.
+        // --- CEI: all state writes BEFORE external call (S-003) ---
+
+        // Mint ticket (lazy — only on purchase)
+        let ticket = Ticket {
+            owner: buyer.clone(),
+            event_id: event_id.clone(),
+            status: TicketStatus::Active,
+        };
+        storage::write_ticket(&env, &ticket_id, &ticket);
+
+        // Update supply and escrow accounting
+        event.current_supply = event
+            .current_supply
+            .checked_add(1)
+            .ok_or(ContractError::Overflow)?;
+        storage::write_event(&env, &event_id, &event);
+        escrow::add_to_escrow(&env, &event_id, event.price_per_ticket)?;
+
+        // External interaction last — pull XLM from buyer into escrow.
+        let xlm_token = storage::read_xlm_token(&env)?;
         let token_client = token::Client::new(&env, &xlm_token);
         token_client.transfer(
             &buyer,
             &env.current_contract_address(),
             &event.price_per_ticket,
         );
-
-        // Mint ticket (lazy — only on purchase)
-        let ticket = Ticket {
-            owner: buyer.clone(),
-            event_id: event_id.clone(),
-            used: false,
-        };
-        storage::write_ticket(&env, &ticket_id, &ticket);
-
-        // Update supply and escrow
-        event.current_supply = event
-            .current_supply
-            .checked_add(1)
-            .ok_or(ContractError::Overflow)?;
-        storage::write_event(&env, &event_id, &event);
-
-        escrow::add_to_escrow(&env, &event_id, event.price_per_ticket)?;
 
         events::emit_ticket_purchased(&env, &ticket_id, &buyer, &event_id);
         Ok(())
@@ -149,11 +172,11 @@ impl TicketContract {
     // -----------------------------------------------------------------------
 
     /// Release escrowed funds to organizer. Only callable after event date.
+    /// Token address is read from contract storage — never trusted from caller (S-001).
     pub fn release_funds(
         env: Env,
         event_id: Symbol,
         organizer: Address,
-        xlm_token: Address,
     ) -> Result<(), ContractError> {
         organizer.require_auth();
 
@@ -177,13 +200,14 @@ impl TicketContract {
             return Err(ContractError::InsufficientEscrowBalance);
         }
 
-        let token_client = token::Client::new(&env, &xlm_token);
-        token_client.transfer(&env.current_contract_address(), &organizer, &held);
-
+        // State updates before external transfer (CEI).
         escrow::subtract_from_escrow(&env, &event_id, held)?;
-
         event.status = EventStatus::Completed;
         storage::write_event(&env, &event_id, &event);
+
+        let xlm_token = storage::read_xlm_token(&env)?;
+        let token_client = token::Client::new(&env, &xlm_token);
+        token_client.transfer(&env.current_contract_address(), &organizer, &held);
 
         events::emit_funds_released(&env, &event_id, &organizer, held);
         Ok(())
@@ -197,7 +221,6 @@ impl TicketContract {
         env: Env,
         ticket_id: Symbol,
         attendee: Address,
-        xlm_token: Address,
     ) -> Result<(), ContractError> {
         attendee.require_auth();
 
@@ -206,7 +229,7 @@ impl TicketContract {
         if ticket.owner != attendee {
             return Err(ContractError::TicketNotOwnedByCaller);
         }
-        if ticket.used {
+        if ticket.status != TicketStatus::Active {
             return Err(ContractError::TicketAlreadyUsed);
         }
 
@@ -216,19 +239,20 @@ impl TicketContract {
             return Err(ContractError::EventNotCancelled);
         }
 
-        // Mark ticket as used to prevent double-refund
-        ticket.used = true;
+        // State updates before external transfer (CEI).
+        // Mark ticket Refunded — distinct from Used (scanned). See D-018.
+        ticket.status = TicketStatus::Refunded;
         storage::write_ticket(&env, &ticket_id, &ticket);
+        escrow::subtract_from_escrow(&env, &ticket.event_id, event.price_per_ticket)?;
 
-        // Return price to attendee
+        // Return price to attendee using the stored trusted token address.
+        let xlm_token = storage::read_xlm_token(&env)?;
         let token_client = token::Client::new(&env, &xlm_token);
         token_client.transfer(
             &env.current_contract_address(),
             &attendee,
             &event.price_per_ticket,
         );
-
-        escrow::subtract_from_escrow(&env, &ticket.event_id, event.price_per_ticket)?;
 
         events::emit_refund(&env, &ticket_id, &attendee, event.price_per_ticket);
         Ok(())
@@ -249,7 +273,7 @@ impl TicketContract {
 
         let mut ticket = storage::read_ticket(&env, &ticket_id)?;
 
-        if ticket.used {
+        if ticket.status != TicketStatus::Active {
             return Err(ContractError::TicketAlreadyUsed);
         }
 
@@ -273,7 +297,7 @@ impl TicketContract {
 
         let mut ticket = storage::read_ticket(&env, &ticket_id)?;
 
-        if ticket.used {
+        if ticket.status != TicketStatus::Active {
             return Err(ContractError::TicketAlreadyUsed);
         }
 
@@ -282,7 +306,8 @@ impl TicketContract {
             return Err(ContractError::OnlyOrganizerAllowed);
         }
 
-        ticket.used = true;
+        // Mark ticket Used — distinct from Refunded. See D-018.
+        ticket.status = TicketStatus::Used;
         storage::write_ticket(&env, &ticket_id, &ticket);
 
         events::emit_ticket_used(&env, &ticket_id);
@@ -303,5 +328,11 @@ impl TicketContract {
 
     pub fn get_marketplace(env: Env) -> Result<Address, ContractError> {
         storage::read_marketplace_address(&env)
+    }
+
+    /// Return the trusted XLM SAC token address stored at initialize.
+    /// Useful for frontend transparency and test assertions.
+    pub fn get_xlm_token(env: Env) -> Result<Address, ContractError> {
+        storage::read_xlm_token(&env)
     }
 }

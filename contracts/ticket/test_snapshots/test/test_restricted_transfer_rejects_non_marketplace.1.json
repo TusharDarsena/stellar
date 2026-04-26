@@ -99,9 +99,6 @@
                 },
                 {
                   "symbol": "t_rt"
-                },
-                {
-                  "address": "CACMVW2KK4H5FZDFF2AUCAKQTEJMZZWJUIZF23XMRVYQBSXYLHZ6BKWN"
                 }
               ]
             }
@@ -398,10 +395,14 @@
                   },
                   {
                     "key": {
-                      "symbol": "used"
+                      "symbol": "status"
                     },
                     "val": {
-                      "bool": false
+                      "vec": [
+                        {
+                          "symbol": "Active"
+                        }
+                      ]
                     }
                   }
                 ]
@@ -438,6 +439,18 @@
                       "val": {
                         "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                       }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "XlmToken"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "address": "CACMVW2KK4H5FZDFF2AUCAKQTEJMZZWJUIZF23XMRVYQBSXYLHZ6BKWN"
+                      }
                     }
                   ]
                 }
@@ -446,7 +459,7 @@
           },
           "ext": "v0"
         },
-        "live_until": 4095
+        "live_until": 6311999
       },
       {
         "entry": {
@@ -667,7 +680,7 @@
           },
           "ext": "v0"
         },
-        "live_until": 4095
+        "live_until": 6311999
       }
     ]
   },

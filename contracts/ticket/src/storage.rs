@@ -3,6 +3,10 @@ use soroban_sdk::{Address, Env, Symbol};
 use crate::error::ContractError;
 use crate::types::{DataKey, Event, Ticket};
 
+// TTL thresholds (in ledgers). Min TTL: 17280 (~1 day). Target TTL: 31536000 (~1 year).
+const TTL_MIN: u32 = 17_280;
+const TTL_TARGET: u32 = 31_536_000;
+
 // ---------------------------------------------------------------------------
 // Marketplace address (set once at initialize)
 // Stored in instance() — this is contract-lifetime data. See D-012.
@@ -19,6 +23,9 @@ pub fn write_marketplace_address(env: &Env, address: &Address) {
     env.storage()
         .instance()
         .set(&DataKey::MarketplaceAddress, address);
+    // Extend instance TTL so the marketplace address never expires and cannot
+    // be hijacked via re-initialization after expiry (S-002).
+    env.storage().instance().extend_ttl(TTL_MIN, TTL_TARGET);
 }
 
 pub fn has_marketplace_address(env: &Env) -> bool {
@@ -44,7 +51,7 @@ pub fn write_event(env: &Env, event_id: &Symbol, event: &Event) {
         .set(&DataKey::Event(event_id.clone()), event);
     env.storage()
         .persistent()
-        .extend_ttl(&DataKey::Event(event_id.clone()), 17280, 31536000);
+        .extend_ttl(&DataKey::Event(event_id.clone()), TTL_MIN, TTL_TARGET);
 }
 
 pub fn has_event(env: &Env, event_id: &Symbol) -> bool {
@@ -70,7 +77,13 @@ pub fn write_ticket(env: &Env, ticket_id: &Symbol, ticket: &Ticket) {
         .set(&DataKey::Ticket(ticket_id.clone()), ticket);
     env.storage()
         .persistent()
-        .extend_ttl(&DataKey::Ticket(ticket_id.clone()), 17280, 31536000);
+        .extend_ttl(&DataKey::Ticket(ticket_id.clone()), TTL_MIN, TTL_TARGET);
+}
+
+pub fn has_ticket(env: &Env, ticket_id: &Symbol) -> bool {
+    env.storage()
+        .persistent()
+        .has(&DataKey::Ticket(ticket_id.clone()))
 }
 
 // ---------------------------------------------------------------------------
@@ -90,5 +103,27 @@ pub fn write_escrow(env: &Env, event_id: &Symbol, amount: i128) {
         .set(&DataKey::Escrow(event_id.clone()), &amount);
     env.storage()
         .persistent()
-        .extend_ttl(&DataKey::Escrow(event_id.clone()), 17280, 31536000);
+        .extend_ttl(&DataKey::Escrow(event_id.clone()), TTL_MIN, TTL_TARGET);
+}
+
+// ---------------------------------------------------------------------------
+// XLM token address (set once at initialize — never trust caller-supplied)
+// ---------------------------------------------------------------------------
+
+pub fn read_xlm_token(env: &Env) -> Result<Address, ContractError> {
+    env.storage()
+        .instance()
+        .get(&DataKey::XlmToken)
+        .ok_or(ContractError::NotInitialized)
+}
+
+pub fn write_xlm_token(env: &Env, address: &Address) {
+    env.storage()
+        .instance()
+        .set(&DataKey::XlmToken, address);
+    env.storage().instance().extend_ttl(TTL_MIN, TTL_TARGET);
+}
+
+pub fn has_xlm_token(env: &Env) -> bool {
+    env.storage().instance().has(&DataKey::XlmToken)
 }
