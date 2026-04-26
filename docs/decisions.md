@@ -40,9 +40,14 @@ Attendees: Google/email login, silent keypair creation, no crypto knowledge requ
 
 A listed ticket can be used at the door before it sells, making the listing stale. Acceptable for MVP — `restricted_transfer` is required to actually move ownership, so financial risk is contained.
 
-## D-010 — royalty_rate as integer percentage
+## D-010 — royalty_rate as integer percentage, ceiling division
 
-`royalty_rate = 10` means 10%. `royalty = ask_price * royalty_rate / 100`. No floats in Soroban. Switch to basis points (/ 10000) if finer granularity is ever needed.
+`royalty_rate = 10` means 10%. Royalty uses ceiling division to prevent micro-transaction evasion:
+`royalty = (ask_price * royalty_rate + 99) / 100`.
+Standard floor division (`* rate / 100`) rounds down to 0 for small prices (e.g. 9 stroops × 10% = 0.9 → 0), completely bypassing the organizer's cut.
+Ceiling division ensures organizers always receive at least 1 stroop when `rate > 0` and `ask_price > 0`.
+Pattern adopted from litemint-royalty-contract. Switch to basis points (/ 10000) if finer granularity is ever needed.
+`buy_listing` skips the organizer transfer entirely if `royalty == 0` (rate=0 case) — the XLM SAC panics on a zero-amount transfer.
 
 ## D-011 — SDK pinned at 25.3.1
 
@@ -79,4 +84,20 @@ Zero or negative capacity allows events that are immediately sold out or allow i
 ## D-019 — get_xlm_token transparency query
 
 Added `get_xlm_token` as a public read-only method alongside `get_marketplace`. The frontend and tests can verify that the stored XLM SAC address matches the expected network token without needing off-chain config cross-referencing.
+
+## D-020 — Namespaced Listing IDs
+
+Listings in `MarketplaceContract` are keyed by `(seller, listing_id)` rather than a globally unique `listing_id`. This prevents a griefing attack where a malicious actor observes a pending `list_ticket` transaction in the mempool and front-runs it with their own transaction using the same `listing_id`, causing the legitimate seller's transaction to fail.
+
+## D-021 — Stale Listing Fail-Fast
+
+When a buyer attempts to purchase a listing via `buy_listing`, the contract first verifies that `ticket.owner == listing.seller`. If the seller transferred or used the ticket out-of-band, the transaction fails immediately. While Soroban rolls back failed transactions regardless, this fail-fast check avoids the gas costs associated with cross-contract token transfers that would inevitably be rolled back.
+
+## D-022 — On-Chain Event Derivation for Royalties
+
+In `buy_listing`, the contract derives the event (and thus the organizer who receives royalties) by querying the on-chain ticket record (`get_ticket(listing.ticket_id).event_id`). It explicitly does NOT trust the `event_id` provided by the seller in the listing struct, closing a vulnerability where a malicious seller could list a real ticket but supply a fake `event_id` pointing to an event they control, thereby redirecting royalties to themselves.
+
+## D-023 — `contractclient` for Cross-Contract WASM builds
+
+To avoid `symbol multiply defined` linker errors when building `wasm32v1-none` binaries that perform cross-contract calls, the `TicketContract` is strictly isolated as a `[dev-dependency]`. For production builds, `MarketplaceContract` uses the `#[contractclient]` macro on a minimal interface trait (`TicketInterface`) alongside identical struct definitions, enabling XDR-compatible cross-contract calls without linking the other contract's binary.
 

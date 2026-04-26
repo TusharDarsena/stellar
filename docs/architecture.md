@@ -29,14 +29,14 @@
 ### MarketplaceContract
 
 **Storage Model**
-- **Listing** (persistent, keyed by `listing_id`): `seller`, `ticket_id`, `event_id`, `ask_price`, `status` (Open, Sold, Cancelled)
+- **Listing** (persistent, keyed by `(seller, listing_id)`): `seller`, `ticket_id`, `event_id`, `ask_price`, `status` (Open, Sold, Cancelled). Namespaced to `seller` to prevent ID front-running (D-019).
 - **Config** (instance): `ticket_contract_address`, `royalty_rate` (integer percentage, e.g., 10 = 10% - D-010)
 
 **Functions**
 - `initialize(ticket_contract_address, royalty_rate)`: Sets contract config.
-- `list_ticket(seller, ticket_id, event_id, ask_price)`: Creates Open listing after verifying seller owns an Active unused ticket. No on-chain lock (D-009).
-- `buy_listing(listing_id, buyer)`: Pulls `ask_price`, pays royalty (`ask_price * rate / 100`) to organizer, pays seller, calls TicketContract.`restricted_transfer`, marks Sold.
-- `cancel_listing(listing_id, seller)`: Marks Cancelled.
+- `list_ticket(seller, listing_id, ticket_id, event_id, ask_price)`: Creates Open listing. No on-chain lock (D-009). `event_id` is stored for informational purposes only.
+- `buy_listing(seller, listing_id, buyer)`: Fails fast if ticket owner changed (D-020). Derives authoritative `event_id` from on-chain ticket record (D-021). Pulls `ask_price`, calculates ceiling royalty `(price * rate + 99) / 100`, pays organizer and seller, calls TicketContract.`restricted_transfer`, marks Sold.
+- `cancel_listing(seller, listing_id)`: Marks Cancelled.
 
 ---
 

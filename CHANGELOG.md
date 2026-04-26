@@ -64,3 +64,31 @@ Following up on the initial scaffold, identified several architectural and secur
 - Refactored `TicketContract` (`lib.rs` and `types.rs`) to implement the above decisions.
 - Storage helpers updated to support `xlm_token` reads and writes, including TTL extensions.
 - Modified tests to align with the new signatures (`purchase`, `refund`, `release_funds` no longer take `xlm_token` as an argument; `TicketStatus` assertions instead of `used` booleans).
+
+---
+
+## Session 3 — 2026-04-26
+
+### Context
+Following the completion of the `TicketContract`, implemented the secondary market via `MarketplaceContract`.
+
+### Decisions logged
+- **D-019** — Namespaced `Listing` DataKey to `(seller, listing_id)` to prevent ID front-running griefing.
+- **D-020** — `buy_listing` incorporates a fail-fast check (`ticket.owner == listing.seller`) before token transfers to save gas on stale listings.
+- **D-021** — `buy_listing` derives the authoritative `event_id` from the on-chain ticket record, eliminating seller-supplied `event_id` forgery vulnerabilities.
+- **D-022** — Used `#[contractclient]` to define `TicketInterface` manually in `MarketplaceContract` to avoid `symbol multiply defined` linker errors when compiling the `wasm32v1-none` target.
+
+### What was built
+- **Implemented `MarketplaceContract`**: `lib.rs`, `types.rs`, `storage.rs`, `events.rs`, `error.rs`, `ticket_interface.rs`, and a comprehensive `test.rs`.
+- **Financial accuracy**: Implemented Litemint's ceiling division pattern `((price * rate) + 99) / 100` for royalty calculations to ensure organizers receive their cut even on micro-transactions.
+- **Testing**: Added 17 unit tests with a unified `TestSetup` fixture covering happy paths, royalty math, forgery attempts, and adversarial flows.
+
+### Test results
+```
+cargo build --target wasm32v1-none --release -p marketplace   → Finished
+cargo test -p marketplace                                       → 17 passed, 0 failed
+```
+
+### What's next
+- Deployment scripts (`scripts/deploy.sh`, `scripts/fund.sh`)
+- Frontend integration (React + Vite)

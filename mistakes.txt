@@ -1,0 +1,44 @@
+ai 1- 
+
+**The `contractimport!` approach will cause problems in tests.** When you gate it with `#[cfg(not(test))]`, the `ticket_client::Client` type disappears in test builds, so `lib.rs` can't compile tests that exercise `buy_listing`. The cleaner SDK 25 pattern is to define a trait for the inter-contract call and swap implementations — but that's complex. The simplest working approach is: don't use `contractimport!` at all yet. Since the ticket contract is in the same workspace, just import `ticket::TicketContractClient` directly and use `env.register(TicketContract, ())` in both test and non-test code. The generated client works fine for on-chain calls too. You only need `contractimport!` if the ticket were an external contract you don't control.
+
+**The `DataKey` for `TicketContract` and `RoyaltyRate` should use the enum variant pattern, not bare unit variants.** Looking at ticket's `types.rs`, `DataKey::MarketplaceAddress` is a unit variant but stored in `instance()`. That's fine. Just make sure your storage helpers for these use `instance()` not `persistent()` — the plan says instance for both, which is correct, but double-check the TTL extension applies to instance storage via `env.storage().instance().extend_ttl()` not `persistent().extend_ttl()`.
+
+**The `get_event` call inside `buy_listing` happens after the state write but before the token transfers.** Your CEI ordering has a subtle issue: you wrote listing as Sold, then you call `ticket_client.get_event()` (an external call), then you do token transfers, then `restricted_transfer`. That `get_event` read is a cross-contract call — it should happen before you mark Sold, or you accept that it's a read-only call with no re-entrancy risk. In Soroban re-entrancy isn't possible the same way as EVM, so it's fine in practice, but the cleaner ordering is: read what you need first (organizer from get_event, xlm token from get_xlm_token), compute royalties, then do all state writes, then all external interactions. Fix the CEI description accordingly.
+
+**`get_xlm_token` call on the ticket contract.** The plan mentions reading the XLM token address from the ticket contract inside `buy_listing`. This is two inter-contract reads per purchase (get_event + get_xlm_token). That's fine for correctness. One alternative: store the XLM token address in the marketplace at initialize time too, passing it as a third parameter. This avoids the extra cross-contract read and is what you'd do in production. But it introduces a second source of truth for the token address. Given your S-001 decision already lives in the ticket contract, reading from there is more principled. Keep the plan as-is.
+
+**The `BuyerIsSeller` check is a nice-to-have but the plan slightly overstates the risk.** The royalty drain concern: if buyer == seller, the seller pays ask_price and receives seller_proceeds, so they only "lose" the royalty. That royalty goes to the organizer, not to a black hole. It's more of a UX protection than a security issue. Still worth keeping, just clarifying the threat model.
+
+**Error code 11 (DivisionByZero) is technically unreachable** if royalty rate is clamped to [0, 100] at initialize and you're always dividing by 100 (a literal). You could remove it or keep it for defensive completeness. Keep it — it costs nothing and protects against future changes to the divisor.
+
+**One missing test:** `test_buy_listing_transfers_correct_xlm_amounts` with a rate of 0 when `checked_div(100)` produces 0 royalty — verify the organizer transfer is skipped (don't call `token.transfer` with amount 0, that could panic on some token implementations). Add a guard: only call the royalty transfer if `royalty > 0`.
+
+Everything else looks correct. The file structure, TTL constants, event symbol lengths, error variants, and test fixture pattern all align with the ticket contract conventions. Go ahead and implement.
+
+ai 2 - 
+
+1. The event_id Forgery Vulnerability (CRITICAL)
+The Plan: You wrote, "Call ticket_client.get_event(event_id) to get the authoritative organizer. The caller-supplied event_id in the Listing is used as the lookup key."
+The Error: If the event_id is supplied by the seller during list_ticket, a malicious seller can forge the listing. They can list a legitimate ticket_id they own, but pass a fake event_id for an event they created themselves. When buy_listing executes, it will look up the fake event, send the royalty payout to the malicious seller, and successfully transfer the real ticket.
+The Fix: Do not trust the event_id stored in the listing. buy_listing must query the TicketContract to definitively map the ticket_id to its true event_id, and then look up the organizer. Storing event_id in the Listing struct is actually a security liability and redundant state bloat.
+
+2. Missing Litemint Ceiling Math
+The Plan: The CEI math is formulated as royalty = ask_price.checked_mul(rate).ok_or(Overflow)?.checked_div(100).ok_or(DivisionByZero)?.
+The Error: This drops the crucial ceiling division pattern you specifically wanted to extract from Litemint. If an item is listed for a small amount of stroops, standard integer division will round the royalty down to 0, completely bypassing the organizer's cut.
+The Fix: Litemint's exact pattern to prevent micro-transaction royalty evasion is amount.checked_mul(rate).and_then(|val| val.checked_add(99)).and_then(|val| val.checked_div(100)). Your plan's math needs to include the + 99 step before division.
+
+3. Griefing via Caller-Supplied Listing IDs
+The Plan: The listing_id is a caller-supplied Symbol, and list_ticket guards against overwrites using has_listing(listing_id).
+The Error: While you explicitly decided against PRNG, using caller-supplied IDs in a public mempool opens the contract to front-running and griefing. A malicious actor can monitor the network for list_ticket transactions and submit their own transaction with the exact same listing_id but a higher fee. Your valid seller gets hit with a ListingAlreadyExists error and a failed transaction.
+The Fix: Litemint completely avoids this vector by generating unique auction IDs on-chain using env.prng().fill(&mut id). If you absolutely must use caller-supplied IDs, you should consider namespacing the DataKey to the seller (e.g., DataKey::Listing(seller_address, listing_id)) so no one can block a specific ID globally.
+
+4. SDK 25 Cross-Contract Auth Friction
+The Plan: buy_listing requires buyer.require_auth(), and makes an inter-contract call to TicketContract.restricted_transfer(ticket_id, buyer).
+The Error: In SDK 25, auth payloads are highly rigid. If restricted_transfer on the TicketContract side also calls buyer.require_auth() (or expects the buyer's signature to cover the internal call), the transaction will fail because the buyer only signed the invocation for buy_listing.
+The Fix: Ensure that TicketContract.restricted_transfer strictly checks env.current_contract_address() == stored_marketplace_address and explicitly omits any require_auth() calls for the buyer or seller.
+
+5. Stale Listing Gas UX
+The Plan: You noted D-009 (no on-chain lock), accepting that stale listings are an MVP gap.
+The Error: You must account for how a stale listing fails. If a seller lists a ticket and then uses or transfers it out of band, the listing remains Open. When a buyer attempts buy_listing, the token transfers (pulling XLM, pushing royalties) will execute first, and only at the very end will restricted_transfer fail.
+The Fix: Soroban will roll back the entire transaction upon the panic in restricted_transfer, so no funds are actually lost. However, the buyer pays the gas for all those cross-contract token operations just to get a failure. You might want to query ticket_client.get_owner(ticket_id) == listing.seller before moving any XLM to fail fast and save the user gas.

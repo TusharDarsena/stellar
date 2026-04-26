@@ -11,12 +11,12 @@ NFT event ticketing on Stellar. Two Soroban smart contracts + React/Vite fronten
 
 ## Read before you code
 
-| Working on | Read first |
-|---|---|
-| Anything | `docs/architecture.md` |
-| Contracts | + `contracts/README.md` |
-| Frontend | + `docs/frontend.md` |
-| Reference repos | `docs/repo_guide.md` |
+| Working on          | Read first                                                      |
+| ------------------- | --------------------------------------------------------------- |
+| Anything            | `docs/architecture.md`                                          |
+| Contracts           | + `contracts/README.md`                                         |
+| Frontend            | + `docs/frontend.md`                                            |
+| Reference repos     | `docs/repo_guide.md`                                            |
 | Any design decision | `docs/decisions.md` — check before changing, add after deciding |
 
 ---
@@ -24,57 +24,57 @@ NFT event ticketing on Stellar. Two Soroban smart contracts + React/Vite fronten
 ## File ownership
 
 ### Root
-| File | Owns |
-|---|---|
-| `README.md` | Project overview and current status |
-| `AGENTS.md` | This file |
+| File           | Owns                                         |
+| -------------- | -------------------------------------------- |
+| `README.md`    | Project overview and current status          |
+| `AGENTS.md`    | This file                                    |
 | `CHANGELOG.md` | Session log — append after each work session |
 
 ### docs/
-| File | Owns |
-|---|---|
+| File              | Owns                                                                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `architecture.md` | **Binding design.** Storage models, function signatures, wallet flows, QR, deployment sequence. Do not deviate without updating `decisions.md`. |
-| `decisions.md` | Why each design choice was made. Check before overriding anything. |
-| `repo_guide.md` | What to use/avoid from reference repos. Read once before writing contracts. |
-| `frontend.md` | Frontend file responsibilities, hook APIs, page behaviors. |
+| `decisions.md`    | Why each design choice was made. Check before overriding anything.                                                                              |
+| `repo_guide.md`   | What to use/avoid from reference repos. Read once before writing contracts.                                                                     |
+| `frontend.md`     | Frontend file responsibilities, hook APIs, page behaviors.                                                                                      |
 
 ### contracts/
-| File | Owns |
-|---|---|
-| `Cargo.toml` | Workspace root. SDK pinned **once** here: `soroban-sdk = "25.3.1"`. Never add a version in per-contract files. |
-| `ticket/src/lib.rs` | Public interface only. No business logic. Never calls `env.storage()` directly. |
-| `ticket/src/types.rs` | All `#[contracttype]` definitions. Nothing else. |
-| `ticket/src/storage.rs` | All `read_*` / `write_*` helpers. Raw storage, no logic. |
-| `ticket/src/escrow.rs` | XLM stroop accounting only. |
-| `ticket/src/events.rs` | All `env.events().publish()` calls. Nowhere else. |
-| `ticket/src/test.rs` | Contract tests using Soroban test environment. |
-| `marketplace/src/lib.rs` | Public interface + the one inter-contract call to `restricted_transfer` in `buy_listing`. |
-| `marketplace/src/types.rs` | `DataKey`, `Listing`, `ListingStatus`. |
-| `marketplace/src/storage.rs` | Storage helpers, same pattern as ticket. |
-| `marketplace/src/events.rs` | Marketplace events only. |
-| `marketplace/src/test.rs` | Royalty calculation, buy_listing flow, cancellation. |
+| File                         | Owns                                                                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `Cargo.toml`                 | Workspace root. SDK pinned **once** here: `soroban-sdk = "25.3.1"`. Never add a version in per-contract files. |
+| `ticket/src/lib.rs`          | Public interface only. No business logic. Never calls `env.storage()` directly.                                |
+| `ticket/src/types.rs`        | All `#[contracttype]` definitions. Nothing else.                                                               |
+| `ticket/src/storage.rs`      | All `read_*` / `write_*` helpers. Raw storage, no logic.                                                       |
+| `ticket/src/escrow.rs`       | XLM stroop accounting only.                                                                                    |
+| `ticket/src/events.rs`       | All `env.events().publish()` calls. Nowhere else.                                                              |
+| `ticket/src/test.rs`         | Contract tests using Soroban test environment.                                                                 |
+| `marketplace/src/lib.rs`     | Public interface + the one inter-contract call to `restricted_transfer` in `buy_listing`.                      |
+| `marketplace/src/types.rs`   | `DataKey`, `Listing`, `ListingStatus`.                                                                         |
+| `marketplace/src/storage.rs` | Storage helpers, same pattern as ticket.                                                                       |
+| `marketplace/src/events.rs`  | Marketplace events only.                                                                                       |
+| `marketplace/src/test.rs`    | Royalty calculation, buy_listing flow, cancellation.                                                           |
 
 ### frontend/src/
-| File | Owns |
-|---|---|
-| `lib/constants.ts` | ⚠️ Contract addresses, RPC URL, network passphrase. The **only** place. Hardcoding elsewhere is a bug. |
-| `lib/soroban.ts` | Build → simulate → prepare → submit. Only file importing `SorobanRpc`. |
-| `lib/stellar.ts` | Horizon utilities, `Keypair.verify()`. No transaction building. |
-| `lib/qr.ts` | QR payload build + verify. Zero network calls. |
-| `lib/web3auth.ts` | Web3Auth init + login. Private key never leaves this file. |
-| `hooks/useWallet.ts` | Unified Freighter + Web3Auth hook. Nothing outside knows which provider is active. |
-| `hooks/useEvents.ts` | Event list with 30s cache. Never fetch inside render. |
-| `hooks/useTickets.ts` | Tickets for current wallet. Call `invalidate()` after purchase. |
-| `components/shared/` | UI primitives. No blockchain logic. |
-| `components/attendee/` | Attendee-only components. Does not import from `organizer/`. |
-| `components/organizer/` | Organizer-only components. Does not import from `attendee/`. |
-| `components/scanner/` | Camera + QR decode + result display. |
+| File                    | Owns                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| `lib/constants.ts`      | ⚠️ Contract addresses, RPC URL, network passphrase. The **only** place. Hardcoding elsewhere is a bug. |
+| `lib/soroban.ts`        | Build → simulate → prepare → submit. Only file importing `SorobanRpc`.                                |
+| `lib/stellar.ts`        | Horizon utilities, `Keypair.verify()`. No transaction building.                                       |
+| `lib/qr.ts`             | QR payload build + verify. Zero network calls.                                                        |
+| `lib/web3auth.ts`       | Web3Auth init + login. Private key never leaves this file.                                            |
+| `hooks/useWallet.ts`    | Unified Freighter + Web3Auth hook. Nothing outside knows which provider is active.                    |
+| `hooks/useEvents.ts`    | Event list with 30s cache. Never fetch inside render.                                                 |
+| `hooks/useTickets.ts`   | Tickets for current wallet. Call `invalidate()` after purchase.                                       |
+| `components/shared/`    | UI primitives. No blockchain logic.                                                                   |
+| `components/attendee/`  | Attendee-only components. Does not import from `organizer/`.                                          |
+| `components/organizer/` | Organizer-only components. Does not import from `attendee/`.                                          |
+| `components/scanner/`   | Camera + QR decode + result display.                                                                  |
 
 ### scripts/
-| File | Owns |
-|---|---|
+| File        | Owns                                                                                          |
+| ----------- | --------------------------------------------------------------------------------------------- |
 | `deploy.sh` | Deploy Ticket → Marketplace → initialize both. Fails loudly on error. Order is enforced here. |
-| `fund.sh` | Friendbot for test addresses. |
+| `fund.sh`   | Friendbot for test addresses.                                                                 |
 
 ---
 
@@ -109,6 +109,21 @@ NFT event ticketing on Stellar. Two Soroban smart contracts + React/Vite fronten
 - **No lock mechanism on listings.** Known gap, acceptable for MVP. D-009.
 
 ---
+
+**do not** write 15–20 lines of setup in test.rs files (creating the environment, generating addresses, mocking auths, deploying the token, and initializing the ticket contract). 1-2 sentences max. instead - create a Test Fixture or setup struct. Then, your actual tests become beautifully short:
+
+Rust
+#[test]
+fn test_create_event_and_purchase() {
+    let setup = TestSetup::new();
+    // Start testing the actual logic immediately:
+    setup.contract.create_event(...);
+    setup.contract.purchase(...);
+}
+
+## updating architecture.md
+
+# **update teh architecture.md if soem change is made that changes teh architecture.**
 
 ## Before writing code
 
