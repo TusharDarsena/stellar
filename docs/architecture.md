@@ -61,10 +61,11 @@ Prevents sequence number races. Never skip simulation.
 ---
 
 ## Deployment Sequence
-1. Deploy TicketContract. Get address.
-2. Deploy MarketplaceContract (pass TicketContract address).
-3. Call TicketContract.`initialize(marketplace_address, xlm_token)`.
-4. Fund test accounts.
+1. Fund test accounts, including auto-generating the `organizer` CLI identity (D-024).
+2. Deploy TicketContract. Get address.
+3. Deploy MarketplaceContract. Get address.
+4. Call TicketContract.`initialize(marketplace_address, xlm_token)`.
+5. Call MarketplaceContract.`initialize(ticket_contract_address, royalty_rate)`.
 
 ## Excluded from MVP
 - Passkey auth (Web3Auth preferred)

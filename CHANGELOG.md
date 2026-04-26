@@ -92,3 +92,25 @@ cargo test -p marketplace                                       → 17 passed, 0
 ### What's next
 - Deployment scripts (`scripts/deploy.sh`, `scripts/fund.sh`)
 - Frontend integration (React + Vite)
+
+---
+
+## Session 4 — 2026-04-26
+
+### Context
+With both smart contracts fully implemented, the goal was to deploy them to the Stellar Testnet, configure the necessary frontend environment files, and generate TypeScript bindings.
+
+### What was built
+- **Deployment Scripts**:
+  - `scripts/fund.sh`: Ensures all necessary CLI identities (`alice`, `buyer`, `inspector`, `seller`, `organizer`) are generated and funded via Friendbot on the Testnet.
+  - `scripts/deploy.sh`: Compiles WASM binaries for both contracts, deploys them using the `organizer` identity, executes their respective cross-dependent `initialize` functions, and outputs the contract addresses to `frontend/.env.local`.
+- **Testnet Deployment**: Successfully executed the scripts. Both `TicketContract` and `MarketplaceContract` are live on the Testnet.
+- **Frontend Preparation**:
+  - Generated TypeScript bindings for both contracts directly into `frontend/src/contracts/ticket` and `frontend/src/contracts/marketplace` via `stellar contract bindings typescript`.
+- **CLI Smoke Test**:
+  - Verified the live Testnet contracts by invoking `create_event` with a future timestamp and `purchase` with the `organizer` identity. 
+  - The transactions correctly transferred native Testnet XLM to the contract escrow and emitted the expected events.
+
+### What's next
+- Initialize the Vite + React frontend application inside `frontend/`.
+- Build the core wallet hooks and Soroban connection utilities.
