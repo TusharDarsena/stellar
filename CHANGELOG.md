@@ -114,3 +114,44 @@ With both smart contracts fully implemented, the goal was to deploy them to the 
 ### What's next
 - Initialize the Vite + React frontend application inside `frontend/`.
 - Build the core wallet hooks and Soroban connection utilities.
+
+## Session 5 — 2026-04-27
+
+### Context
+Built the full frontend application from scratch using React, Vite, and Tailwind CSS v4, following the architectural guidelines in `docs/frontend.md` and visual references from Stitch designs.
+
+### Decisions logged
+- **D-023** — Switched to Tailwind v4 with `@theme` block in `globals.css` for design tokens.
+- **D-024** — Adopted a single-state `AppView` router in `App.tsx` to keep the SPA lightweight and avoid `react-router-dom` boilerplate.
+- **D-025** — Integrated `qrcode.react` for client-side QR generation, ensuring privacy and offline-readability for ticket verification.
+- **D-026** — Standardized page-level navigation using a consistent `onBack` prop pattern across all views.
+
+### What was built
+- **Core Layout & UI**:
+  - `AppHeader`: Context-aware navigation with wallet connectivity.
+  - `BottomNav`: Mobile-first primary navigation.
+  - `TxOverlay`: Global transaction state monitoring UI.
+  - Component Library: `Button`, `Card`, `Badge`, `EventCard`, `TicketCard`.
+- **Attendee Flow**:
+  - `LandingPage`: Visual gateway with role selection.
+  - `BrowsePage`: Real-time event grid with search and filtering.
+  - `EventDetailPage`: High-fidelity event overview with purchase CTA.
+  - `PurchasePage`: XLM-denominated checkout flow with mock transaction handlers.
+  - `MyTicketsPage`: Collection view of purchased NFTs.
+  - `QRDisplayPage`: Dynamic QR code generation for gate entry.
+- **Organizer Flow**:
+  - `ScannerPage`: Camera-ready gate entry system with valid/invalid mock states.
+  - `DashboardPage`: High-level inventory and escrow settlement dashboard.
+  - `CreateEventPage`: Interactive event creator with a live card preview.
+
+### Bugs & Visual Fixes
+- **Icons**: Fixed "raw text" icons by injecting Google Material Symbols into `index.html`.
+- **Typography**: Injected "Inter" font and updated global sans-serif stack.
+- **Boilerplate**: Deleted 185 lines of leftover Vite CSS.
+- **Refactor**: Replaced hardcoded hex colors (`#7C5CFF`, etc.) with semantic variables (`bg-primary`) across core UI components.
+
+### What's next
+- Integrate real Soroban contract hooks (replacing mock handlers).
+- Implement cryptographically signed QR payloads (D-006).
+- Add real wallet connectivity via Freighter and Web3Auth hooks.
+- Deploy frontend to Vercel/Netlify for staging verification.
