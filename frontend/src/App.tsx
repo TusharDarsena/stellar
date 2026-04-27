@@ -106,7 +106,7 @@ function App() {
           <MyTicketsPage onShowQR={handleShowQR} onBrowseMore={() => setCurrentView('browse')} />
         );
       case 'scanner':
-        return <ScannerPage />;
+        return <ScannerPage onBack={() => setCurrentView('organizer-dashboard')} />;
       case 'organizer-dashboard':
         return (
           <DashboardPage

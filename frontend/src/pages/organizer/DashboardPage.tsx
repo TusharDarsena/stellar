@@ -247,32 +247,6 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
           </div>
         </section>
       </main>
-
-      {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-[#15181C]/90 backdrop-blur-md border-t border-[#272C33] shadow-[0_-4px_20px_rgba(124,92,255,0.1)]">
-        <button className="flex flex-col items-center justify-center text-[#7C5CFF] bg-[#7C5CFF]/10 rounded-xl px-3 py-1">
-          <span className="material-symbols-outlined">dashboard</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest">Home</span>
-        </button>
-        <button
-          onClick={onCreateEvent}
-          className="flex flex-col items-center justify-center text-[#EAEFF4]/50 hover:text-[#7C5CFF] transition-all"
-        >
-          <span className="material-symbols-outlined">add_circle</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest">Create</span>
-        </button>
-        <button
-          onClick={onScanTickets}
-          className="flex flex-col items-center justify-center text-[#EAEFF4]/50 hover:text-[#7C5CFF] transition-all"
-        >
-          <span className="material-symbols-outlined">qr_code_scanner</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest">Scan</span>
-        </button>
-        <button className="flex flex-col items-center justify-center text-[#EAEFF4]/50 hover:text-[#7C5CFF] transition-all">
-          <span className="material-symbols-outlined">settings</span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest">Settings</span>
-        </button>
-      </nav>
     </div>
   );
 }

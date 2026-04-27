@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface QRDisplayPageProps {
   ticketId: string;
@@ -37,11 +38,13 @@ export function QRDisplayPage({ ticketId, onBack }: QRDisplayPageProps) {
           {/* QR Code Container */}
           <div className="w-full aspect-square bg-white rounded-xl flex items-center justify-center p-8 mb-10 border border-[#7C5CFF]/20 shadow-[0_0_40px_rgba(124,92,255,0.15)]">
             <div className="relative w-full h-full">
-              {/* Using a placeholder for QR code image */}
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${ticketId}-${countdown}`} 
-                alt="QR Code" 
-                className="w-full h-full object-contain" 
+              <QRCodeSVG
+                value={`${ticketId}-${countdown}`}
+                size={256}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                level="H"
+                includeMargin={false}
               />
             </div>
           </div>

@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 
-export function ScannerPage() {
+interface ScannerPageProps {
+  onBack: () => void;
+}
+
+export function ScannerPage({ onBack }: ScannerPageProps) {
   const [scanResult, setScanResult] = useState<'idle' | 'success' | 'error'>('idle');
 
   return (
@@ -8,7 +12,10 @@ export function ScannerPage() {
       {/* TopAppBar */}
       <header className="flex justify-between items-center px-6 py-4 w-full sticky top-0 z-50 bg-[#15181C] border-b border-[#272C33]">
         <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-[#272C33]/50 transition-colors duration-200 rounded-full flex items-center justify-center">
+          <button 
+            onClick={onBack}
+            className="p-2 hover:bg-[#272C33]/50 transition-colors duration-200 rounded-full flex items-center justify-center"
+          >
             <span className="material-symbols-outlined text-[#e6e0ee]">arrow_back</span>
           </button>
           <h1 className="text-xl font-bold tracking-tighter text-[#e6e0ee]">StellarTickets</h1>
