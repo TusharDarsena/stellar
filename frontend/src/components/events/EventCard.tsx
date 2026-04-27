@@ -13,8 +13,6 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, onClick, onAction, actionLabel = 'Get Tickets', actionVariant = 'primary' }: EventCardProps) {
-  const isWaitlist = event.currentSupply >= event.capacity;
-  
   const handleAction = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onAction) onAction(event.eventId);
@@ -64,10 +62,10 @@ export function EventCard({ event, onClick, onAction, actionLabel = 'Get Tickets
             <span className="text-xl font-bold text-[#7C5CFF]">{stroopsToXlm(event.pricePerTicket)} XLM</span>
           </div>
           <Button 
-            variant={isWaitlist ? 'secondary' : actionVariant}
+            variant={actionVariant}
             onClick={handleAction}
           >
-            {isWaitlist ? 'Join Waitlist' : actionLabel}
+            {actionLabel}
           </Button>
         </div>
       </CardContent>

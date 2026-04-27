@@ -189,3 +189,40 @@ Refactored the frontend architecture to eliminate prop-drilling, centralize stat
 - Implement organizer "Release Funds" transaction flow.
 - Deployment of frontend to production environment.
 
+---
+
+## Session 7 — 2026-04-27 (Current)
+
+### Context
+Finalized the frontend integration, transitioning the UI from mock data to real on-chain smart contract calls and cryptographically secure local signatures.
+
+### Decisions logged
+- **D-031** — Attendee authentication uses a local Burner Wallet strategy (`Keypair.random()`) stored in `localStorage` instead of Web3Auth. This unlocks offline QR signing capabilities because Freighter cannot expose private keys.
+- **D-032** — Client-side Transaction Building: Using `AssembledTransaction.signAndSend()` exclusively. No backend XDR server is used for transaction orchestration.
+- **D-033** — Blockchain state discovery is done exclusively via RPC event polling (`SorobanRpc.getEvents`) instead of on-chain `get_all_*` methods to avoid exceeding Soroban instruction limits.
+- **D-034** — The QR Code payload format is signed using `ed25519` via the attendee's local burner wallet, satisfying the zero-network-call verification requirement.
+
+### What was built
+- **Core Integrations (`src/lib/`)**:
+  - `constants.ts`: Sourced all contract addresses and network configuration from `.env.local`.
+  - `qr.ts`: Built cryptographically sound `ed25519` signed QR generation and verification routines.
+  - `stellar.ts`: Handled Burner Wallet lifecycle management, including Testnet Friendbot funding.
+  - `soroban.ts`: Replaced all mock handlers with real contract method invocations (`purchase`, `createEvent`, `markUsed`), with human-readable error decoding.
+- **Hooks (`src/hooks/`)**:
+  - `useTickets` & `useEvents`: Implemented intelligent 30s RPC event polling filters to discover tickets/events belonging to the user.
+  - `useWallet`: Unified Freighter (organizer) and Burner (attendee) connection paths, exposing a standardized `SignFn`.
+- **UI Wiring (`src/pages/`)**:
+  - `QRDisplayPage`: Wrote live rotation logic to generate a fresh signed payload every 30s. Added safeguards to prevent Organizers (Freighter) from attempting to generate QR codes.
+  - `ScannerPage`: Transitioned mock scan data to actual signature verification and on-chain `markUsed` transaction submission.
+  - `PurchasePage` & `CreateEventPage`: Wired checkout and creation flows directly to their respective `soroban.ts` routines with real-time UI loading states.
+
+### Bugs Fixed
+- **XDR Parsing**: Migrated complex manual XDR extraction logic in the RPC pollers to use `@stellar/stellar-sdk`'s native `scValToNative()` utility for stable variable mapping.
+- **Type Casting**: Enforced robust parameter conversions between JS numericals and Rust Smart Contract typings (e.g. converting XLM to Stroops via `BigInt`).
+
+### Test Results
+- `npx tsc --noEmit` — 0 errors.
+
+### What's next
+- Final testing on Stellar Testnet for end-to-end QR scan verification.
+- MVP deployment to production environments.

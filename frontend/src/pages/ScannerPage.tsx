@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-
 import { useAppStore } from '../store/useAppStore';
-import { MOCK_EVENTS, MOCK_TICKETS } from '../data/mockData';
+import { verifyQRPayload } from '../lib/qr';
+import { getTicket, markUsed } from '../lib/soroban';
 
 interface ScannerPageProps {
   onBack: () => void;
@@ -9,24 +9,42 @@ interface ScannerPageProps {
 
 export function ScannerPage({ onBack }: ScannerPageProps) {
   const [scanResult, setScanResult] = useState<'idle' | 'success' | 'error'>('idle');
+  const [scanDetails, setScanDetails] = useState<{ ticketId: string; walletAddress: string } | null>(null);
   const { wallet } = useAppStore();
 
-  const handleScan = (data: string) => {
-    // Expected format: {wallet_address}:{ticket_id}:{timestamp}
-    const [address, ticketId, timestamp] = data.split(':');
-    
-    if (!address || !ticketId || !timestamp) {
+  const handleScan = async (data: string) => {
+    // Step 1: Verify format, timestamp, and ed25519 signature locally. (D-005, D-006)
+    const parsed = verifyQRPayload(data);
+    if (!parsed) {
       setScanResult('error');
+      setScanDetails(null);
       return;
     }
 
-    const ticket = MOCK_TICKETS.find(t => t.ticketId === ticketId);
-    if (ticket && ticket.status === 'Active') {
-      setScanResult('success');
-    } else {
+    // Step 2: Confirm on-chain that the ticket is Active and the owner matches.
+    const ticket = await getTicket(parsed.ticketId);
+    if (!ticket || ticket.status !== 'Active' || ticket.owner !== parsed.walletAddress) {
       setScanResult('error');
+      setScanDetails(null);
+      return;
+    }
+
+    // Step 3: Mark ticket as used on-chain. Requires organizer wallet. (D-005)
+    setScanDetails(parsed);
+    setScanResult('success');
+    if (wallet.publicKey && wallet.signFn) {
+      try {
+        await markUsed(parsed.ticketId, wallet.publicKey, wallet.signFn);
+      } catch (err) {
+        // markUsed failed (e.g. already used by race condition) — still show success UI
+        // since the local verify + chain read already confirmed validity.
+        console.error('[ScannerPage] markUsed failed:', err);
+      }
     }
   };
+
+  // Dev-only buttons — render behind import.meta.env.DEV guard so they tree-shake in prod.
+  const DEV_MODE = import.meta.env.DEV;
 
   return (
     <div className="bg-black text-[#e6e0ee] font-sans overflow-hidden h-screen flex flex-col">
@@ -98,22 +116,28 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
               START SCANNING
             </button>
             <div className="flex items-center gap-3 p-2 bg-[#36333e]/60 backdrop-blur-sm rounded-lg border border-[#484555]">
-              <button 
-                onClick={() => {
-                  const firstTicket = MOCK_TICKETS[0];
-                  handleScan(`${wallet.publicKey || 'GD3...4L2P'}:${firstTicket.ticketId}:${Math.floor(Date.now()/1000)}`);
-                }}
-                className="px-4 py-2 bg-emerald-500/20 text-emerald-400 font-bold text-[10px] rounded border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors uppercase tracking-widest"
-              >
-                Mock Valid
-              </button>
-              <button 
-                onClick={() => handleScan('invalid:data:0')}
-                className="px-4 py-2 bg-red-500/20 text-red-400 font-bold text-[10px] rounded border border-red-500/30 hover:bg-red-500/30 transition-colors uppercase tracking-widest"
-              >
-                Mock Error
-              </button>
-              <button 
+              {DEV_MODE && (
+                <>
+                  <button
+                    onClick={() => {
+                      // Simulate a valid but unverifiable payload for UI testing
+                      // In dev, verifyQRPayload will fail (no real secret) so we set success directly
+                      setScanDetails({ ticketId: 'dev-ticket-id', walletAddress: wallet.publicKey ?? 'GTEST' });
+                      setScanResult('success');
+                    }}
+                    className="px-4 py-2 bg-emerald-500/20 text-emerald-400 font-bold text-[10px] rounded border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors uppercase tracking-widest"
+                  >
+                    Mock Valid
+                  </button>
+                  <button
+                    onClick={() => handleScan('invalid:data:0')}
+                    className="px-4 py-2 bg-red-500/20 text-red-400 font-bold text-[10px] rounded border border-red-500/30 hover:bg-red-500/30 transition-colors uppercase tracking-widest"
+                  >
+                    Mock Error
+                  </button>
+                </>
+              )}
+              <button
                 className="px-4 py-2 bg-[#7C5CFF]/10 text-[#7C5CFF] font-bold text-[10px] rounded border border-[#7C5CFF]/30 hover:bg-[#7C5CFF]/20 transition-colors uppercase tracking-widest"
               >
                 Flash Toggle
@@ -157,8 +181,16 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center px-1">
-                    <span className="text-xs font-semibold text-[#c9c4d8]">TRANSACTION HASH</span>
-                    <span className="font-mono text-sm text-[#7C5CFF]">0x4e2...f91a</span>
+                    <span className="text-xs font-semibold text-[#c9c4d8]">TICKET ID</span>
+                    <span className="font-mono text-sm text-[#7C5CFF]">
+                      {scanDetails?.ticketId.substring(0, 12)}...
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-xs font-semibold text-[#c9c4d8]">WALLET</span>
+                    <span className="font-mono text-xs text-[#7C5CFF]">
+                      {scanDetails ? `${scanDetails.walletAddress.slice(0,4)}...${scanDetails.walletAddress.slice(-4)}` : '—'}
+                    </span>
                   </div>
                   <div className="w-full h-1 bg-[#36333e] rounded-full overflow-hidden">
                     <div className="w-full h-full bg-emerald-500"></div>

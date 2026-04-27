@@ -31,6 +31,8 @@ const EMPTY_FORM: CreateEventFormData = {
 
 import { useAppStore } from '../../store/useAppStore';
 import { createEvent } from '../../lib/soroban';
+import { generateID } from '../../lib/utils';
+import { xlmToStroops } from '../../types';
 
 export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
   const [form, setForm] = useState<CreateEventFormData>(EMPTY_FORM);
@@ -43,38 +45,39 @@ export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!wallet.isConnected || !wallet.publicKey) {
-      alert('Please connect your wallet first.');
+    if (!wallet.isConnected || !wallet.publicKey || !wallet.signFn) {
+      alert('Please connect your organizer wallet (Freighter) first.');
       return;
     }
 
     setTxState({ status: 'building' });
     try {
-      // 1. Convert Date & Time to Unix timestamp
+      // Convert date + time to Unix timestamp
       const dateTimeStr = `${form.date}T${form.time}:00`;
       const dateUnix = Math.floor(new Date(dateTimeStr).getTime() / 1000);
 
-      // 2. Convert XLM to stroops (1 XLM = 10_000_000 stroops)
-      const priceStroops = Math.floor(parseFloat(form.priceXlm) * 10_000_000);
-
+      // Convert XLM to stroops as bigint (D-007 revised — BigInt required by contract binding)
+      const priceStroops = xlmToStroops(parseFloat(form.priceXlm));
       const capacity = parseInt(form.capacity, 10);
 
-      const txHash = await createEvent({
-        organizer: wallet.publicKey,
-        name: form.name,
-        dateUnix,
-        capacity,
-        priceStroops
-      });
+      // eventId generated client-side — organizer controls the ID namespace (D-029)
+      const eventId = generateID();
 
-      setTxState({ status: 'success', hash: txHash });
+      await createEvent(
+        { eventId, name: form.name, dateUnix, capacityXlm: capacity, priceStroops },
+        wallet.publicKey,
+        wallet.signFn,
+      );
+
+      setTxState({ status: 'success', hash: eventId });
       setTimeout(() => {
         setTxState({ status: 'idle' });
         onSubmit();
       }, 1500);
 
-    } catch (err: any) {
-      setTxState({ status: 'error', errorMessage: err.message || 'Failed to create event' });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to create event';
+      setTxState({ status: 'error', errorMessage: msg });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     }
   };

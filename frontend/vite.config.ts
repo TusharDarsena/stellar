@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -17,5 +18,11 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      ticket: path.resolve(__dirname, 'src/contracts/ticket/src/index.ts'),
+      marketplace: path.resolve(__dirname, 'src/contracts/marketplace/src/index.ts'),
+    },
+  },
 })
 

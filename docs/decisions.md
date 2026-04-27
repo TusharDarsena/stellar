@@ -146,3 +146,29 @@ The `TicketContract` has no `get_all_events()` or `get_tickets_by_owner()` — o
 **Polling**: Both hooks poll every 30s via `setInterval`. A manual `invalidate()` method resets the timer and re-fetches immediately (called after a purchase).
 
 **Ledger range**: RPC nodes only retain events for a finite ledger window (varies by node). On testnet with few events and recent deployment, fetching from ledger 0 is acceptable. A production indexer (e.g., Stellar Hubble or Mercury) would be needed for mainnet.
+
+---
+
+## Known Economic Limitations (Not Fixed for MVP)
+
+## D-030 — Secondary Market Refund Only Returns Original Mint Price
+
+The `refund()` function in `TicketContract` returns `event.price_per_ticket` — the price set at event creation. It does NOT return the price paid on the secondary market.
+
+**Scenario**: An attendee buys a ticket for 100 XLM via the marketplace (original price: 10 XLM + 90 XLM markup). If the event is cancelled, `refund()` returns only 10 XLM, not the 100 XLM paid.
+
+**Why this is acceptable for MVP**: The secondary market operates in a trustless, trust-minimized way. Refunding the full secondary price would require the contract to track the actual ask_price paid per ticket, adding storage overhead and complexity. The V2 approach would be to add an optional "refund policy" field to the Event struct that organizers opt into.
+
+## D-031 — Escrow Release Timing (Rug Pull Vulnerability)
+
+`release_funds` can be called when `ledger.timestamp >= event.date_unix`. An organizer could theoretically:
+
+1. Create an event for a fake concert
+2. Mint a few tickets to themselves or friends
+3. Wait until the event date, then immediately call `release_funds`
+
+This drains the (empty or minimal) escrow while the contract appears legitimate.
+
+**Mitigation for V2**: Require a minimum threshold of scanned tickets (e.g., at least 50% of capacity marked as `Used` via `mark_used`) before `release_funds` becomes callable. This ensures real attendance before funds unlock.
+
+**Why not fixed for MVP**: Adding a scanned-ticket threshold requires tracking scanned count per event, additional storage writes on every `mark_used`, and a more complex release condition. The MVP prioritizes core functionality over this edge case.

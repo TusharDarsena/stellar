@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { Event, stroopsToXlm, TxState } from '../types';
+import { Event, stroopsToXlm } from '../types';
 import { Button } from '../components/ui/Button';
+import { useAppStore } from '../store/useAppStore';
+import { purchaseTicket } from '../lib/soroban';
+import { generateID } from '../lib/utils';
 
 interface PurchasePageProps {
   event: Event;
   onBack: () => void;
-  onPurchaseComplete: (eventId: string, txHash: string) => void;
+  onPurchaseComplete: (eventId: string, ticketId: string) => void;
 }
-
-import { useAppStore } from '../store/useAppStore';
-import { purchaseTicket } from '../lib/soroban';
 
 export function PurchasePage({ event, onBack, onPurchaseComplete }: PurchasePageProps) {
   const [quantity, setQuantity] = useState(1);
@@ -26,20 +26,24 @@ export function PurchasePage({ event, onBack, onPurchaseComplete }: PurchasePage
   };
 
   const handlePurchase = async () => {
-    if (!wallet.isConnected || !wallet.publicKey) return;
-    
+    if (!wallet.isConnected || !wallet.publicKey || !wallet.signFn) return;
+
     setTxState({ status: 'building' });
     try {
-      const txHash = await purchaseTicket(event.eventId, wallet.publicKey);
-      setTxState({ status: 'success', hash: txHash });
-      
+      // Each on-chain ticket is a separate NFT — generate a unique ID for this purchase.
+      // For quantity > 1 this would loop, but MVP keeps it at 1 per tx for simplicity.
+      const ticketId = generateID();
+      await purchaseTicket(event.eventId, wallet.publicKey, ticketId, wallet.signFn);
+      setTxState({ status: 'success' });
+
       // Wait for success animation before navigating
       setTimeout(() => {
         setTxState({ status: 'idle' });
-        onPurchaseComplete(event.eventId, txHash);
+        onPurchaseComplete(event.eventId, ticketId);
       }, 1500);
-    } catch (err: any) {
-      setTxState({ status: 'error', errorMessage: err.message || 'Purchase failed' });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Purchase failed';
+      setTxState({ status: 'error', errorMessage: msg });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     }
   };
