@@ -1,16 +1,16 @@
-use soroban_sdk::{contracttype, Address, Symbol};
+use soroban_sdk::{contracttype, Address, String};
 
 /// Storage keys for all persistent data in TicketContract.
-/// Keyed by event_id or ticket_id (both Symbols).
+/// Keyed by event_id or ticket_id (both Strings).
 #[derive(Clone)]
 #[contracttype]
 pub enum DataKey {
     /// Stores an Event record, keyed by event_id
-    Event(Symbol),
+    Event(String),
     /// Stores a Ticket record, keyed by ticket_id
-    Ticket(Symbol),
+    Ticket(String),
     /// Stores escrow balance (in stroops) for an event, keyed by event_id
-    Escrow(Symbol),
+    Escrow(String),
     /// The one address allowed to call restricted_transfer.
     /// Set once at initialize(), never changes.
     /// NOTE: Stored in instance() storage — not persistent() — because this IS
@@ -51,8 +51,8 @@ pub enum TicketStatus {
 pub struct Event {
     /// Address that created the event and will receive funds after release
     pub organizer: Address,
-    /// Short display name (stored as Symbol to save ledger rent)
-    pub name: Symbol,
+    /// Short display name (stored as String to handle spaces and length > 32)
+    pub name: String,
     /// Unix timestamp of the event date
     pub date_unix: u64,
     /// Maximum number of tickets that can be sold
@@ -71,9 +71,10 @@ pub struct Ticket {
     /// Current owner of this ticket
     pub owner: Address,
     /// Which event this ticket belongs to
-    pub event_id: Symbol,
+    pub event_id: String,
     /// Lifecycle state: Active → Used (scanned) or Refunded (event cancelled).
     /// Never use a bool here — on-chain data is permanent and analytics must
     /// distinguish the two terminal states. See D-018.
     pub status: TicketStatus,
 }
+

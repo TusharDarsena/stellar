@@ -107,10 +107,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "symbol": "ev_auth"
+                  "string": "ev_auth"
                 },
                 {
-                  "symbol": "TestEvent"
+                  "string": "TestEvent"
                 },
                 {
                   "u64": "86400"
@@ -138,13 +138,13 @@
               "function_name": "purchase",
               "args": [
                 {
-                  "symbol": "ev_auth"
+                  "string": "ev_auth"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "symbol": "t1"
+                  "string": "t1"
                 }
               ]
             }
@@ -187,13 +187,13 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "symbol": "l1"
+                  "string": "l1"
                 },
                 {
-                  "symbol": "t1"
+                  "string": "t1"
                 },
                 {
-                  "symbol": "ev_auth"
+                  "string": "ev_auth"
                 },
                 {
                   "i128": "10000000"
@@ -218,7 +218,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "symbol": "l1"
+                  "string": "l1"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
@@ -459,7 +459,7 @@
                     "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                   },
                   {
-                    "symbol": "l1"
+                    "string": "l1"
                   }
                 ]
               },
@@ -479,7 +479,7 @@
                       "symbol": "event_id"
                     },
                     "val": {
-                      "symbol": "ev_auth"
+                      "string": "ev_auth"
                     }
                   },
                   {
@@ -507,7 +507,7 @@
                       "symbol": "ticket_id"
                     },
                     "val": {
-                      "symbol": "t1"
+                      "string": "t1"
                     }
                   }
                 ]
@@ -579,7 +579,7 @@
                     "symbol": "Escrow"
                   },
                   {
-                    "symbol": "ev_auth"
+                    "string": "ev_auth"
                   }
                 ]
               },
@@ -606,7 +606,7 @@
                     "symbol": "Event"
                   },
                   {
-                    "symbol": "ev_auth"
+                    "string": "ev_auth"
                   }
                 ]
               },
@@ -642,7 +642,7 @@
                       "symbol": "name"
                     },
                     "val": {
-                      "symbol": "TestEvent"
+                      "string": "TestEvent"
                     }
                   },
                   {
@@ -694,7 +694,7 @@
                     "symbol": "Ticket"
                   },
                   {
-                    "symbol": "t1"
+                    "string": "t1"
                   }
                 ]
               },
@@ -706,7 +706,7 @@
                       "symbol": "event_id"
                     },
                     "val": {
-                      "symbol": "ev_auth"
+                      "string": "ev_auth"
                     }
                   },
                   {
@@ -1316,7 +1316,7 @@
                 "symbol": "tk_xfer"
               },
               {
-                "symbol": "t1"
+                "string": "t1"
               }
             ],
             "data": {
@@ -1339,7 +1339,7 @@
                 "symbol": "mk_sold"
               },
               {
-                "symbol": "l1"
+                "string": "l1"
               }
             ],
             "data": {

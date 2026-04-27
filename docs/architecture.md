@@ -50,6 +50,10 @@
 **Server builds/simulates → Client signs → Server submits.** 
 Prevents sequence number races. Never skip simulation.
 
+### State Management (D-025)
+**Global Store (Zustand)**: `txState` and `wallet` are managed in a central store (`useAppStore`). This ensures that transaction feedback (overlays) and wallet updates are reflected immediately across the entire application without prop-drilling.
+
+
 ### QR Verification (D-005, D-006)
 1. **Frontend (every 30s)**: Attendee wallet signs `{wallet_address}:{ticket_id}:{timestamp}`. Encodes as QR.
 2. **Scanner (at door)**: Decodes QR.

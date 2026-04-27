@@ -101,3 +101,20 @@ In `buy_listing`, the contract derives the event (and thus the organizer who rec
 
 To avoid `symbol multiply defined` linker errors when building `wasm32v1-none` binaries that perform cross-contract calls, the `TicketContract` is strictly isolated as a `[dev-dependency]`. For production builds, `MarketplaceContract` uses the `#[contractclient]` macro on a minimal interface trait (`TicketInterface`) alongside identical struct definitions, enabling XDR-compatible cross-contract calls without linking the other contract's binary.
 
+## D-024 — Centralized Mock Data Source
+
+All mock events and tickets were moved to `src/data/mockData.ts`. Previously, components like `DashboardPage` and `BrowsePage` had local, slightly divergent mock objects. Centralization ensures that when a ticket is "purchased" or "used" in one view, the data remains consistent across the entire session, preventing "ghost" data bugs during the prototype phase.
+
+## D-025 — Zustand for Global State Management
+
+Migrated `wallet` and `txState` from local `useState` in `App.tsx` to a global Zustand `useAppStore`. This eliminates prop-drilling into deeply nested components like `PurchasePage` or `CreateEventPage`. It also allows any component to trigger transaction overlays or read the connected wallet address without complex callback chains.
+
+## D-026 — Self-Hiding Layout Components
+
+`AppHeader` and `BottomNav` now contain internal visibility logic based on `currentView`. Instead of `App.tsx` conditionally rendering them, the components themselves return `null` for "standalone" views (like Scanner or Dashboard). This prevents "double-header" artifacts where both a global header and a page-specific header would render simultaneously.
+
+## D-027 — Standardized QR Payload Format
+
+Adopted `{wallet_address}:{ticket_id}:{timestamp}` as the standard payload for ticket QRs. The 30s rotation ensures that even if a QR is photographed, it expires quickly. The format is designed to be easily parsable by the `ScannerPage` and compatible with future `ed25519` signature verification (D-006).
+
+

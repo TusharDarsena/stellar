@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, Env, Symbol};
+use soroban_sdk::{Address, Env, String};
 
 use crate::error::ContractError;
 use crate::types::{DataKey, Event, Ticket};
@@ -38,14 +38,14 @@ pub fn has_marketplace_address(env: &Env) -> bool {
 // Event
 // ---------------------------------------------------------------------------
 
-pub fn read_event(env: &Env, event_id: &Symbol) -> Result<Event, ContractError> {
+pub fn read_event(env: &Env, event_id: &String) -> Result<Event, ContractError> {
     env.storage()
         .persistent()
         .get(&DataKey::Event(event_id.clone()))
         .ok_or(ContractError::EventNotFound)
 }
 
-pub fn write_event(env: &Env, event_id: &Symbol, event: &Event) {
+pub fn write_event(env: &Env, event_id: &String, event: &Event) {
     env.storage()
         .persistent()
         .set(&DataKey::Event(event_id.clone()), event);
@@ -54,7 +54,7 @@ pub fn write_event(env: &Env, event_id: &Symbol, event: &Event) {
         .extend_ttl(&DataKey::Event(event_id.clone()), TTL_MIN, TTL_TARGET);
 }
 
-pub fn has_event(env: &Env, event_id: &Symbol) -> bool {
+pub fn has_event(env: &Env, event_id: &String) -> bool {
     env.storage()
         .persistent()
         .has(&DataKey::Event(event_id.clone()))
@@ -64,14 +64,14 @@ pub fn has_event(env: &Env, event_id: &Symbol) -> bool {
 // Ticket
 // ---------------------------------------------------------------------------
 
-pub fn read_ticket(env: &Env, ticket_id: &Symbol) -> Result<Ticket, ContractError> {
+pub fn read_ticket(env: &Env, ticket_id: &String) -> Result<Ticket, ContractError> {
     env.storage()
         .persistent()
         .get(&DataKey::Ticket(ticket_id.clone()))
         .ok_or(ContractError::TicketNotFound)
 }
 
-pub fn write_ticket(env: &Env, ticket_id: &Symbol, ticket: &Ticket) {
+pub fn write_ticket(env: &Env, ticket_id: &String, ticket: &Ticket) {
     env.storage()
         .persistent()
         .set(&DataKey::Ticket(ticket_id.clone()), ticket);
@@ -80,7 +80,7 @@ pub fn write_ticket(env: &Env, ticket_id: &Symbol, ticket: &Ticket) {
         .extend_ttl(&DataKey::Ticket(ticket_id.clone()), TTL_MIN, TTL_TARGET);
 }
 
-pub fn has_ticket(env: &Env, ticket_id: &Symbol) -> bool {
+pub fn has_ticket(env: &Env, ticket_id: &String) -> bool {
     env.storage()
         .persistent()
         .has(&DataKey::Ticket(ticket_id.clone()))
@@ -90,14 +90,14 @@ pub fn has_ticket(env: &Env, ticket_id: &Symbol) -> bool {
 // Escrow (XLM held per event, in stroops)
 // ---------------------------------------------------------------------------
 
-pub fn read_escrow(env: &Env, event_id: &Symbol) -> i128 {
+pub fn read_escrow(env: &Env, event_id: &String) -> i128 {
     env.storage()
         .persistent()
         .get(&DataKey::Escrow(event_id.clone()))
         .unwrap_or(0i128)
 }
 
-pub fn write_escrow(env: &Env, event_id: &Symbol, amount: i128) {
+pub fn write_escrow(env: &Env, event_id: &String, amount: i128) {
     env.storage()
         .persistent()
         .set(&DataKey::Escrow(event_id.clone()), &amount);
@@ -127,3 +127,4 @@ pub fn write_xlm_token(env: &Env, address: &Address) {
 pub fn has_xlm_token(env: &Env) -> bool {
     env.storage().instance().has(&DataKey::XlmToken)
 }
+

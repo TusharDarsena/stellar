@@ -107,10 +107,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "symbol": "ev_ns"
+                  "string": "ev_ns"
                 },
                 {
-                  "symbol": "TestEvent"
+                  "string": "TestEvent"
                 },
                 {
                   "u64": "86400"
@@ -138,13 +138,13 @@
               "function_name": "purchase",
               "args": [
                 {
-                  "symbol": "ev_ns"
+                  "string": "ev_ns"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "symbol": "t1"
+                  "string": "t1"
                 }
               ]
             }
@@ -184,13 +184,13 @@
               "function_name": "purchase",
               "args": [
                 {
-                  "symbol": "ev_ns"
+                  "string": "ev_ns"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "symbol": "t2"
+                  "string": "t2"
                 }
               ]
             }
@@ -233,13 +233,13 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 },
                 {
-                  "symbol": "l1"
+                  "string": "l1"
                 },
                 {
-                  "symbol": "t1"
+                  "string": "t1"
                 },
                 {
-                  "symbol": "ev_ns"
+                  "string": "ev_ns"
                 },
                 {
                   "i128": "10000000"
@@ -264,13 +264,13 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "symbol": "l1"
+                  "string": "l1"
                 },
                 {
-                  "symbol": "t2"
+                  "string": "t2"
                 },
                 {
-                  "symbol": "ev_ns"
+                  "string": "ev_ns"
                 },
                 {
                   "i128": "10000000"
@@ -512,7 +512,7 @@
                     "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                   },
                   {
-                    "symbol": "l1"
+                    "string": "l1"
                   }
                 ]
               },
@@ -532,7 +532,7 @@
                       "symbol": "event_id"
                     },
                     "val": {
-                      "symbol": "ev_ns"
+                      "string": "ev_ns"
                     }
                   },
                   {
@@ -560,7 +560,7 @@
                       "symbol": "ticket_id"
                     },
                     "val": {
-                      "symbol": "t1"
+                      "string": "t1"
                     }
                   }
                 ]
@@ -587,7 +587,7 @@
                     "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                   },
                   {
-                    "symbol": "l1"
+                    "string": "l1"
                   }
                 ]
               },
@@ -607,7 +607,7 @@
                       "symbol": "event_id"
                     },
                     "val": {
-                      "symbol": "ev_ns"
+                      "string": "ev_ns"
                     }
                   },
                   {
@@ -635,7 +635,7 @@
                       "symbol": "ticket_id"
                     },
                     "val": {
-                      "symbol": "t2"
+                      "string": "t2"
                     }
                   }
                 ]
@@ -707,7 +707,7 @@
                     "symbol": "Escrow"
                   },
                   {
-                    "symbol": "ev_ns"
+                    "string": "ev_ns"
                   }
                 ]
               },
@@ -734,7 +734,7 @@
                     "symbol": "Event"
                   },
                   {
-                    "symbol": "ev_ns"
+                    "string": "ev_ns"
                   }
                 ]
               },
@@ -770,7 +770,7 @@
                       "symbol": "name"
                     },
                     "val": {
-                      "symbol": "TestEvent"
+                      "string": "TestEvent"
                     }
                   },
                   {
@@ -822,7 +822,7 @@
                     "symbol": "Ticket"
                   },
                   {
-                    "symbol": "t1"
+                    "string": "t1"
                   }
                 ]
               },
@@ -834,7 +834,7 @@
                       "symbol": "event_id"
                     },
                     "val": {
-                      "symbol": "ev_ns"
+                      "string": "ev_ns"
                     }
                   },
                   {
@@ -878,7 +878,7 @@
                     "symbol": "Ticket"
                   },
                   {
-                    "symbol": "t2"
+                    "string": "t2"
                   }
                 ]
               },
@@ -890,7 +890,7 @@
                       "symbol": "event_id"
                     },
                     "val": {
-                      "symbol": "ev_ns"
+                      "string": "ev_ns"
                     }
                   },
                   {

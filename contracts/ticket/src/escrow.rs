@@ -1,10 +1,10 @@
-use soroban_sdk::{Env, Symbol};
+use soroban_sdk::{Env, String};
 
 use crate::error::ContractError;
 use crate::storage;
 
 /// Add stroops to the escrow balance for an event.
-pub fn add_to_escrow(env: &Env, event_id: &Symbol, amount: i128) -> Result<(), ContractError> {
+pub fn add_to_escrow(env: &Env, event_id: &String, amount: i128) -> Result<(), ContractError> {
     let current = storage::read_escrow(env, event_id);
     let updated = current
         .checked_add(amount)
@@ -16,7 +16,7 @@ pub fn add_to_escrow(env: &Env, event_id: &Symbol, amount: i128) -> Result<(), C
 /// Subtract stroops from the escrow balance for an event.
 pub fn subtract_from_escrow(
     env: &Env,
-    event_id: &Symbol,
+    event_id: &String,
     amount: i128,
 ) -> Result<(), ContractError> {
     let current = storage::read_escrow(env, event_id);
@@ -28,6 +28,7 @@ pub fn subtract_from_escrow(
 }
 
 /// Read the current escrow balance for an event.
-pub fn get_escrow_balance(env: &Env, event_id: &Symbol) -> i128 {
+pub fn get_escrow_balance(env: &Env, event_id: &String) -> i128 {
     storage::read_escrow(env, event_id)
 }
+

@@ -68,7 +68,7 @@ npm run build      # production build (runs tsc + vite build)
 ```
 contracts/          Soroban smart contracts (Rust)
   ticket/           TicketContract — NFT ownership, escrow, QR verification
-  marketplace/      MarketplaceContract — resale listings (in progress)
+  marketplace/      MarketplaceContract — resale listings and royalty logic
 docs/               Design docs
   architecture.md   Storage models, function signatures, wallet flows
   decisions.md      Why each design choice was made
@@ -95,6 +95,8 @@ frontend/           React + Vite application
       organizer/
         DashboardPage    Stats grid + event rows + tx history
         CreateEventPage  Event creation form with live preview card
+    store/          Zustand useAppStore (Global state)
+    data/           Centralized mockData.ts
     contracts/      Generated TypeScript bindings (do not edit manually)
       ticket/
       marketplace/
@@ -117,10 +119,11 @@ Existing CLI identities: `alice`, `buyer`, `inspector`, `seller`. Add `organizer
 | Blockchain       | Stellar Testnet                                |
 | Frontend         | React 19 + Vite 8 + Tailwind CSS 4            |
 | Styling          | Tailwind CSS v4 (design tokens from Stitch)    |
+| State Management | Zustand (Global App Store)                     |
 | Routing          | `useState`-based (`AppView` union type)        |
-| Attendee wallet  | Web3Auth (planned) — mock state now            |
-| Organizer wallet | Freighter (planned) — mock state now           |
-| QR generation    | `qrcode.react` + signed payload (planned)      |
+| Attendee wallet  | Web3Auth (Planned)                             |
+| Organizer wallet | Freighter (Integrated)                         |
+| QR generation    | `qrcode.react` + rotating payload (D-027)      |
 | QR scanning      | Browser camera API                             |
 | Contract clients | Generated TS bindings in `src/contracts/`      |
 | CI/CD            | GitHub Actions                                 |

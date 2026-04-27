@@ -8,7 +8,7 @@
 // since Soroban XDR encodes structs positionally. Any divergence silently
 // corrupts data. Keep in sync with ticket/src/types.rs.
 
-use soroban_sdk::{contractclient, contracttype, Address, Env, Symbol};
+use soroban_sdk::{contractclient, contracttype, Address, Env, String, Symbol};
 
 #[derive(Clone, PartialEq, Debug)]
 #[contracttype]
@@ -31,7 +31,7 @@ pub enum EventStatus {
 #[contracttype]
 pub struct Ticket {
     pub owner: Address,
-    pub event_id: Symbol,
+    pub event_id: String,
     pub status: TicketStatus,
 }
 
@@ -40,7 +40,7 @@ pub struct Ticket {
 #[contracttype]
 pub struct Event {
     pub organizer: Address,
-    pub name: Symbol,
+    pub name: String,
     pub date_unix: u64,
     pub capacity: i128,
     pub price_per_ticket: i128,
@@ -54,23 +54,24 @@ pub struct Event {
 #[contractclient(name = "TicketContractClient")]
 pub trait TicketInterface {
     // Called in buy_listing (production + test)
-    fn get_ticket(env: Env, ticket_id: Symbol) -> Ticket;
-    fn get_event(env: Env, event_id: Symbol) -> Event;
+    fn get_ticket(env: Env, ticket_id: String) -> Ticket;
+    fn get_event(env: Env, event_id: String) -> Event;
     fn get_xlm_token(env: Env) -> Address;
-    fn restricted_transfer(env: Env, ticket_id: Symbol, new_owner: Address);
+    fn restricted_transfer(env: Env, ticket_id: String, new_owner: Address);
 
     // Called in test setup helpers only
     fn initialize(env: Env, marketplace_address: Address, xlm_token: Address);
     fn create_event(
         env: Env,
         organizer: Address,
-        event_id: Symbol,
-        name: Symbol,
+        event_id: String,
+        name: String,
         date_unix: u64,
         capacity: i128,
         price_per_ticket: i128,
     );
-    fn purchase(env: Env, event_id: Symbol, buyer: Address, ticket_id: Symbol);
-    fn cancel_event(env: Env, event_id: Symbol, organizer: Address);
-    fn mark_used(env: Env, ticket_id: Symbol, organizer: Address);
+    fn purchase(env: Env, event_id: String, buyer: Address, ticket_id: String);
+    fn cancel_event(env: Env, event_id: String, organizer: Address);
+    fn mark_used(env: Env, ticket_id: String, organizer: Address);
 }
+

@@ -2,7 +2,7 @@
 
 use soroban_sdk::{
     testutils::Address as _,
-    token, Address, Env, Symbol,
+    token, Address, Env, String, Symbol,
 };
 use ticket::TicketContract;
 use crate::ticket_interface::TicketContractClient;
@@ -71,11 +71,11 @@ impl<'a> TestSetup<'a> {
     }
 
     /// Create a standard event (capacity 100, price 1 XLM, date +1 day).
-    fn create_event(&self, event_id: &Symbol) {
+    fn create_event(&self, event_id: &String) {
         self.ticket.create_event(
             &self.organizer,
             event_id,
-            &Symbol::new(&self.env, "TestEvent"),
+            &String::from_str(&self.env, "TestEvent"),
             &(self.env.ledger().timestamp() + 86_400),
             &100,
             &Self::PRICE,
@@ -83,12 +83,12 @@ impl<'a> TestSetup<'a> {
     }
 
     /// Purchase a ticket as the given buyer.
-    fn purchase(&self, event_id: &Symbol, ticket_id: &Symbol, buyer: &Address) {
+    fn purchase(&self, event_id: &String, ticket_id: &String, buyer: &Address) {
         self.ticket.purchase(event_id, buyer, ticket_id);
     }
 
     /// List a ticket as the seller.
-    fn list(&self, listing_id: &Symbol, ticket_id: &Symbol, event_id: &Symbol, price: i128) {
+    fn list(&self, listing_id: &String, ticket_id: &String, event_id: &String, price: i128) {
         self.marketplace.list_ticket(
             &self.seller,
             listing_id,
@@ -96,6 +96,10 @@ impl<'a> TestSetup<'a> {
             event_id,
             &price,
         );
+    }
+
+    fn str(&self, s: &str) -> String {
+        String::from_str(&self.env, s)
     }
 
     fn sym(&self, s: &str) -> Symbol {
@@ -126,9 +130,9 @@ fn assert_err<T: core::fmt::Debug>(
 #[test]
 fn test_list_and_buy_full_flow() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev1");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev1");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -162,9 +166,9 @@ fn test_list_and_buy_full_flow() {
 #[test]
 fn test_cancel_listing() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_cancel");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_cancel");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -181,18 +185,18 @@ fn test_cancel_listing() {
 #[test]
 fn test_ceiling_royalty_micro_transaction() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_micro");
+    let event_id = s.str("ev_micro");
     // Create event with price 9 stroops (below the 10% royalty threshold for floor division)
     s.ticket.create_event(
         &s.organizer,
         &event_id,
-        &s.sym("Micro"),
+        &String::from_str(&s.env, "Micro"),
         &(s.env.ledger().timestamp() + 86_400),
         &100,
         &9,  // 9 stroops
     );
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.ticket.purchase(&event_id, &s.seller, &ticket_id);
 
@@ -212,9 +216,9 @@ fn test_zero_royalty_rate_no_transfer_panic() {
     // restricted_transfer checks for auth from the stored marketplace address.
     let s = TestSetup::new_with_rate(0);
 
-    let event_id = s.sym("ev_zero");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_zero");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -233,9 +237,9 @@ fn test_zero_royalty_rate_no_transfer_panic() {
 #[test]
 fn test_royalty_amounts_exact() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_exact");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_exact");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -254,9 +258,9 @@ fn test_royalty_amounts_exact() {
 #[test]
 fn test_stale_listing_fails_fast_ticket_used() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_stale");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_stale");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -281,25 +285,25 @@ fn test_event_id_forgery_blocked() {
     let s = TestSetup::new();
 
     // Attacker (seller) creates their own event — they are the organizer
-    let real_event_id = s.sym("ev_real");
-    let fake_event_id = s.sym("ev_fake");
+    let real_event_id = s.str("ev_real");
+    let fake_event_id = s.str("ev_fake");
 
     // Real event created by someone else (organizer), ticket purchased by seller
     s.create_event(&real_event_id);
-    let ticket_id = s.sym("t1");
+    let ticket_id = s.str("t1");
     s.purchase(&real_event_id, &ticket_id, &s.seller);
 
     // Attacker creates their own fake event where they are organizer
     s.ticket.create_event(
         &s.seller,
         &fake_event_id,
-        &s.sym("FakeEv"),
+        &String::from_str(&s.env, "FakeEv"),
         &(s.env.ledger().timestamp() + 86_400),
         &100,
         &TestSetup::PRICE,
     );
 
-    let listing_id = s.sym("l1");
+    let listing_id = s.str("l1");
     // Attacker lists with the FAKE event_id hoping royalties go to them as organizer
     s.marketplace.list_ticket(&s.seller, &listing_id, &ticket_id, &fake_event_id, &TestSetup::PRICE);
 
@@ -323,9 +327,9 @@ fn test_event_id_forgery_blocked() {
 #[test]
 fn test_auth_correctly_required() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_auth");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_auth");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -355,17 +359,17 @@ fn test_double_initialize_rejected() {
 #[test]
 fn test_duplicate_listing_id_same_seller_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_dup");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_dup");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
-    s.purchase(&event_id, &s.sym("t1"), &s.seller);
-    s.purchase(&event_id, &s.sym("t2"), &s.seller);
+    s.purchase(&event_id, &s.str("t1"), &s.seller);
+    s.purchase(&event_id, &s.str("t2"), &s.seller);
 
-    s.list(&listing_id, &s.sym("t1"), &event_id, TestSetup::PRICE);
+    s.list(&listing_id, &s.str("t1"), &event_id, TestSetup::PRICE);
     // Same seller, same listing_id must be rejected
     assert_err(
-        s.marketplace.try_list_ticket(&s.seller, &listing_id, &s.sym("t2"), &event_id, &TestSetup::PRICE),
+        s.marketplace.try_list_ticket(&s.seller, &listing_id, &s.str("t2"), &event_id, &TestSetup::PRICE),
         ContractError::ListingAlreadyExists,
     );
 }
@@ -373,18 +377,18 @@ fn test_duplicate_listing_id_same_seller_rejected() {
 #[test]
 fn test_different_sellers_can_reuse_listing_id() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_ns");
+    let event_id = s.str("ev_ns");
     // Both sellers use the same listing_id "l1" — namespacing must prevent collision
-    let listing_id = s.sym("l1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
-    s.purchase(&event_id, &s.sym("t1"), &s.seller);
-    s.purchase(&event_id, &s.sym("t2"), &s.buyer2);
+    s.purchase(&event_id, &s.str("t1"), &s.seller);
+    s.purchase(&event_id, &s.str("t2"), &s.buyer2);
 
     // seller lists as themselves
-    s.marketplace.list_ticket(&s.seller, &listing_id, &s.sym("t1"), &event_id, &TestSetup::PRICE);
+    s.marketplace.list_ticket(&s.seller, &listing_id, &s.str("t1"), &event_id, &TestSetup::PRICE);
     // buyer2 lists with the same listing_id — must succeed (different namespace)
-    s.marketplace.list_ticket(&s.buyer2, &listing_id, &s.sym("t2"), &event_id, &TestSetup::PRICE);
+    s.marketplace.list_ticket(&s.buyer2, &listing_id, &s.str("t2"), &event_id, &TestSetup::PRICE);
 
     // Both listings are independently accessible
     assert_eq!(s.marketplace.get_listing(&s.seller, &listing_id).status, ListingStatus::Open);
@@ -394,9 +398,9 @@ fn test_different_sellers_can_reuse_listing_id() {
 #[test]
 fn test_buy_sold_listing_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_sold");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_sold");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -412,9 +416,9 @@ fn test_buy_sold_listing_rejected() {
 #[test]
 fn test_buy_cancelled_listing_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_canc_buy");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_canc_buy");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -430,9 +434,9 @@ fn test_buy_cancelled_listing_rejected() {
 #[test]
 fn test_buyer_is_seller_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_self");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_self");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -447,28 +451,29 @@ fn test_buyer_is_seller_rejected() {
 #[test]
 fn test_negative_price_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_negprice");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_negprice");
+    let ticket_id = s.str("t1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
 
     assert_err(
-        s.marketplace.try_list_ticket(&s.seller, &s.sym("l1"), &ticket_id, &event_id, &-1),
+        s.marketplace.try_list_ticket(&s.seller, &s.str("l1"), &ticket_id, &event_id, &-1),
         ContractError::InvalidPrice,
     );
     assert_err(
-        s.marketplace.try_list_ticket(&s.seller, &s.sym("l2"), &ticket_id, &event_id, &0),
+        s.marketplace.try_list_ticket(&s.seller, &s.str("l2"), &ticket_id, &event_id, &0),
         ContractError::InvalidPrice,
     );
+
 }
 
 #[test]
 fn test_double_cancel_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_dblcanc");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_dblcanc");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);
@@ -486,9 +491,9 @@ fn test_cancel_by_different_seller_rejected() {
     // Buyer2 cannot cancel a listing that belongs to seller.
     // Because DataKey is namespaced by seller, buyer2's lookup returns NotFound.
     let s = TestSetup::new();
-    let event_id = s.sym("ev_auth_cancel");
-    let ticket_id = s.sym("t1");
-    let listing_id = s.sym("l1");
+    let event_id = s.str("ev_auth_cancel");
+    let ticket_id = s.str("t1");
+    let listing_id = s.str("l1");
 
     s.create_event(&event_id);
     s.purchase(&event_id, &ticket_id, &s.seller);

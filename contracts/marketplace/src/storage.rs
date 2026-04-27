@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, Env, Symbol};
+use soroban_sdk::{Address, Env, String};
 
 use crate::error::ContractError;
 use crate::types::{DataKey, Listing};
@@ -57,7 +57,7 @@ pub fn write_royalty_rate(env: &Env, rate: i128) {
 pub fn read_listing(
     env: &Env,
     seller: &Address,
-    listing_id: &Symbol,
+    listing_id: &String,
 ) -> Result<Listing, ContractError> {
     env.storage()
         .persistent()
@@ -65,7 +65,7 @@ pub fn read_listing(
         .ok_or(ContractError::ListingNotFound)
 }
 
-pub fn write_listing(env: &Env, seller: &Address, listing_id: &Symbol, listing: &Listing) {
+pub fn write_listing(env: &Env, seller: &Address, listing_id: &String, listing: &Listing) {
     let key = DataKey::Listing(seller.clone(), listing_id.clone());
     env.storage().persistent().set(&key, listing);
     env.storage()
@@ -73,8 +73,9 @@ pub fn write_listing(env: &Env, seller: &Address, listing_id: &Symbol, listing: 
         .extend_ttl(&key, TTL_MIN, TTL_TARGET);
 }
 
-pub fn has_listing(env: &Env, seller: &Address, listing_id: &Symbol) -> bool {
+pub fn has_listing(env: &Env, seller: &Address, listing_id: &String) -> bool {
     env.storage()
         .persistent()
         .has(&DataKey::Listing(seller.clone(), listing_id.clone()))
 }
+

@@ -9,7 +9,7 @@ mod ticket_interface;
 #[cfg(test)]
 mod test;
 
-use soroban_sdk::{contract, contractimpl, token, Address, Env, Symbol};
+use soroban_sdk::{contract, contractimpl, token, Address, Env, String, Symbol};
 use crate::ticket_interface::TicketContractClient;
 
 use crate::error::ContractError;
@@ -51,9 +51,9 @@ impl MarketplaceContract {
     pub fn list_ticket(
         env: Env,
         seller: Address,
-        listing_id: Symbol,
-        ticket_id: Symbol,
-        event_id: Symbol,
+        listing_id: String,
+        ticket_id: String,
+        event_id: String,
         ask_price: i128,
     ) -> Result<(), ContractError> {
         seller.require_auth();
@@ -89,7 +89,7 @@ impl MarketplaceContract {
     pub fn buy_listing(
         env: Env,
         seller: Address,
-        listing_id: Symbol,
+        listing_id: String,
         buyer: Address,
     ) -> Result<(), ContractError> {
         buyer.require_auth();
@@ -182,7 +182,7 @@ impl MarketplaceContract {
     pub fn cancel_listing(
         env: Env,
         seller: Address,
-        listing_id: Symbol,
+        listing_id: String,
     ) -> Result<(), ContractError> {
         seller.require_auth();
 
@@ -205,8 +205,9 @@ impl MarketplaceContract {
     pub fn get_listing(
         env: Env,
         seller: Address,
-        listing_id: Symbol,
+        listing_id: String,
     ) -> Result<Listing, ContractError> {
         storage::read_listing(&env, &seller, &listing_id)
     }
 }
+

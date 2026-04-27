@@ -9,7 +9,7 @@ mod types;
 #[cfg(test)]
 mod test;
 
-use soroban_sdk::{contract, contractimpl, token, Address, Env, Symbol};
+use soroban_sdk::{contract, contractimpl, token, Address, Env, String, Symbol};
 
 use crate::error::ContractError;
 use crate::types::{Event, EventStatus, Ticket, TicketStatus};
@@ -48,8 +48,8 @@ impl TicketContract {
     pub fn create_event(
         env: Env,
         organizer: Address,
-        event_id: Symbol,
-        name: Symbol,
+        event_id: String,
+        name: String,
         date_unix: u64,
         capacity: i128,
         price_per_ticket: i128,
@@ -88,7 +88,7 @@ impl TicketContract {
     /// Cancel event. Only organizer. Does not auto-refund — pull-based per D-002.
     pub fn cancel_event(
         env: Env,
-        event_id: Symbol,
+        event_id: String,
         organizer: Address,
     ) -> Result<(), ContractError> {
         organizer.require_auth();
@@ -116,9 +116,9 @@ impl TicketContract {
     /// Token address is read from contract storage — never trusted from caller (S-001).
     pub fn purchase(
         env: Env,
-        event_id: Symbol,
+        event_id: String,
         buyer: Address,
-        ticket_id: Symbol,
+        ticket_id: String,
     ) -> Result<(), ContractError> {
         buyer.require_auth();
 
@@ -175,7 +175,7 @@ impl TicketContract {
     /// Token address is read from contract storage — never trusted from caller (S-001).
     pub fn release_funds(
         env: Env,
-        event_id: Symbol,
+        event_id: String,
         organizer: Address,
     ) -> Result<(), ContractError> {
         organizer.require_auth();
@@ -219,7 +219,7 @@ impl TicketContract {
 
     pub fn refund(
         env: Env,
-        ticket_id: Symbol,
+        ticket_id: String,
         attendee: Address,
     ) -> Result<(), ContractError> {
         attendee.require_auth();
@@ -265,7 +265,7 @@ impl TicketContract {
     /// Transfer ticket ownership. ONLY the stored marketplace address can call this.
     pub fn restricted_transfer(
         env: Env,
-        ticket_id: Symbol,
+        ticket_id: String,
         new_owner: Address,
     ) -> Result<(), ContractError> {
         let marketplace = storage::read_marketplace_address(&env)?;
@@ -290,7 +290,7 @@ impl TicketContract {
 
     pub fn mark_used(
         env: Env,
-        ticket_id: Symbol,
+        ticket_id: String,
         organizer: Address,
     ) -> Result<(), ContractError> {
         organizer.require_auth();
@@ -318,11 +318,11 @@ impl TicketContract {
     // Read-only queries
     // -----------------------------------------------------------------------
 
-    pub fn get_ticket(env: Env, ticket_id: Symbol) -> Result<Ticket, ContractError> {
+    pub fn get_ticket(env: Env, ticket_id: String) -> Result<Ticket, ContractError> {
         storage::read_ticket(&env, &ticket_id)
     }
 
-    pub fn get_event(env: Env, event_id: Symbol) -> Result<Event, ContractError> {
+    pub fn get_event(env: Env, event_id: String) -> Result<Event, ContractError> {
         storage::read_event(&env, &event_id)
     }
 
@@ -336,3 +336,4 @@ impl TicketContract {
         storage::read_xlm_token(&env)
     }
 }
+

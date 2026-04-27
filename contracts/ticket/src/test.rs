@@ -2,7 +2,7 @@
 
 use soroban_sdk::{
     testutils::{Address as _, Ledger},
-    token, Address, Env, Symbol,
+    token, Address, Env, String, Symbol,
 };
 use token::Client as TokenClient;
 use token::StellarAssetClient as TokenAdminClient;
@@ -53,11 +53,11 @@ impl<'a> TestSetup<'a> {
     }
 
     /// Create a standard event at timestamp + 86400 with the given capacity.
-    fn create_event(&self, event_id: &Symbol, capacity: i128) {
+    fn create_event(&self, event_id: &String, capacity: i128) {
         self.contract.create_event(
             &self.organizer,
             event_id,
-            &Symbol::new(&self.env, "TestEvent"),
+            &String::from_str(&self.env, "TestEvent"),
             &(self.env.ledger().timestamp() + 86400),
             &capacity,
             &Self::PRICE,
@@ -65,8 +65,12 @@ impl<'a> TestSetup<'a> {
     }
 
     /// Buy a ticket as the primary buyer.
-    fn purchase(&self, event_id: &Symbol, ticket_id: &Symbol) {
+    fn purchase(&self, event_id: &String, ticket_id: &String) {
         self.contract.purchase(event_id, &self.buyer, ticket_id);
+    }
+
+    fn str(&self, s: &str) -> String {
+        String::from_str(&self.env, s)
     }
 
     fn sym(&self, s: &str) -> Symbol {
@@ -82,7 +86,7 @@ impl<'a> TestSetup<'a> {
 //
 // A contract-level error returned via ContractError lands as Err(Ok(e)).
 // ---------------------------------------------------------------------------
-fn assert_err<T>(
+fn assert_err<T: core::fmt::Debug>(
     result: Result<
         Result<T, soroban_sdk::ConversionError>,
         Result<ContractError, soroban_sdk::InvokeError>,
@@ -102,8 +106,8 @@ fn assert_err<T>(
 #[test]
 fn test_create_event_and_purchase() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev1");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev1");
+    let ticket_id = s.str("t1");
 
     s.create_event(&event_id, 100);
     s.purchase(&event_id, &ticket_id);
@@ -126,32 +130,32 @@ fn test_create_event_and_purchase() {
 #[test]
 fn test_capacity_enforced() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_cap");
+    let event_id = s.str("ev_cap");
 
     // Create with capacity 1
     s.create_event(&event_id, 1);
-    s.purchase(&event_id, &s.sym("t1"));
+    s.purchase(&event_id, &s.str("t1"));
 
     // Second buyer cannot purchase — capacity exceeded
-    let result = s.contract.try_purchase(&event_id, &s.buyer2, &s.sym("t2"));
+    let result = s.contract.try_purchase(&event_id, &s.buyer2, &s.str("t2"));
     assert_err(result, ContractError::EventCapacityExceeded);
 }
 
 #[test]
 fn test_release_funds_requires_past_event_date() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_rel");
+    let event_id = s.str("ev_rel");
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
         &s.organizer,
         &event_id,
-        &s.sym("Fest"),
+        &s.str("Fest"),
         &event_date,
         &50,
         &TestSetup::PRICE,
     );
-    s.purchase(&event_id, &s.sym("t1"));
+    s.purchase(&event_id, &s.str("t1"));
 
     // Release before event date must fail
     assert_err(
@@ -170,8 +174,8 @@ fn test_release_funds_requires_past_event_date() {
 #[test]
 fn test_refund_when_cancelled_sets_refunded_status() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_cancel");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_cancel");
+    let ticket_id = s.str("t1");
 
     s.create_event(&event_id, 50);
     s.purchase(&event_id, &ticket_id);
@@ -189,8 +193,8 @@ fn test_refund_when_cancelled_sets_refunded_status() {
 #[test]
 fn test_mark_used_sets_used_status() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_scan");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_scan");
+    let ticket_id = s.str("t1");
 
     s.create_event(&event_id, 10);
     s.purchase(&event_id, &ticket_id);
@@ -203,8 +207,8 @@ fn test_mark_used_sets_used_status() {
 #[test]
 fn test_restricted_transfer_by_marketplace() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_xfer");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_xfer");
+    let ticket_id = s.str("t1");
     let new_owner = Address::generate(&s.env);
 
     s.create_event(&event_id, 10);
@@ -224,8 +228,8 @@ fn test_restricted_transfer_by_marketplace() {
 #[test]
 fn test_auth_requested_from_buyer_on_purchase() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_auth");
-    let ticket_id = s.sym("t_auth");
+    let event_id = s.str("ev_auth");
+    let ticket_id = s.str("t_auth");
 
     s.create_event(&event_id, 10);
     s.purchase(&event_id, &ticket_id);
@@ -241,7 +245,7 @@ fn test_auth_requested_from_buyer_on_purchase() {
 #[test]
 fn test_auth_requested_from_organizer_on_cancel() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_cancel_auth");
+    let event_id = s.str("ev_cancel_auth");
 
     s.create_event(&event_id, 10);
     s.contract.cancel_event(&event_id, &s.organizer);
@@ -256,8 +260,8 @@ fn test_auth_requested_from_organizer_on_cancel() {
 #[test]
 fn test_restricted_transfer_rejects_when_marketplace_has_no_auth() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_noauth");
-    let ticket_id = s.sym("t_noauth");
+    let event_id = s.str("ev_noauth");
+    let ticket_id = s.str("t_noauth");
     let new_owner = Address::generate(&s.env);
 
     s.create_event(&event_id, 10);
@@ -294,8 +298,8 @@ fn test_double_initialization_rejected() {
 #[test]
 fn test_duplicate_ticket_id_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_dup");
-    let ticket_id = s.sym("dup");
+    let event_id = s.str("ev_dup");
+    let ticket_id = s.str("dup");
 
     s.create_event(&event_id, 10);
     s.purchase(&event_id, &ticket_id);
@@ -318,27 +322,27 @@ fn test_invalid_event_params_rejected() {
 
     // Zero capacity
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.sym("ev_a"), &s.sym("Bad"), &future, &0, &price),
+        s.contract.try_create_event(&s.organizer, &s.str("ev_a"), &s.str("Bad"), &future, &0, &price),
         ContractError::InvalidCapacity,
     );
     // Negative capacity
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.sym("ev_b"), &s.sym("Bad"), &future, &-1, &price),
+        s.contract.try_create_event(&s.organizer, &s.str("ev_b"), &s.str("Bad"), &future, &-1, &price),
         ContractError::InvalidCapacity,
     );
     // Zero price
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.sym("ev_c"), &s.sym("Bad"), &future, &100, &0),
+        s.contract.try_create_event(&s.organizer, &s.str("ev_c"), &s.str("Bad"), &future, &100, &0),
         ContractError::InvalidPrice,
     );
     // Negative price
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.sym("ev_d"), &s.sym("Bad"), &future, &100, &-1),
+        s.contract.try_create_event(&s.organizer, &s.str("ev_d"), &s.str("Bad"), &future, &100, &-1),
         ContractError::InvalidPrice,
     );
     // Date in the past (timestamp 0 == ledger start in tests)
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.sym("ev_e"), &s.sym("Bad"), &0u64, &100, &price),
+        s.contract.try_create_event(&s.organizer, &s.str("ev_e"), &s.str("Bad"), &0u64, &100, &price),
         ContractError::EventDateInPast,
     );
 }
@@ -346,8 +350,8 @@ fn test_invalid_event_params_rejected() {
 #[test]
 fn test_refund_requires_event_cancelled() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_active_refund");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_active_refund");
+    let ticket_id = s.str("t1");
 
     s.create_event(&event_id, 10);
     s.purchase(&event_id, &ticket_id);
@@ -367,8 +371,8 @@ fn test_refund_requires_event_cancelled() {
 #[test]
 fn test_refund_rejects_non_owner() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_unauth_refund");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_unauth_refund");
+    let ticket_id = s.str("t1");
 
     s.create_event(&event_id, 10);
     s.purchase(&event_id, &ticket_id);
@@ -389,8 +393,8 @@ fn test_refund_rejects_non_owner() {
 #[test]
 fn test_double_refund_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_dbl_refund");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_dbl_refund");
+    let ticket_id = s.str("t1");
 
     s.create_event(&event_id, 10);
     s.purchase(&event_id, &ticket_id);
@@ -409,13 +413,13 @@ fn test_double_refund_rejected() {
 #[test]
 fn test_double_release_funds_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_dbl_release");
+    let event_id = s.str("ev_dbl_release");
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.sym("Fest"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer, &event_id, &s.str("Fest"), &event_date, &50, &TestSetup::PRICE,
     );
-    s.purchase(&event_id, &s.sym("t1"));
+    s.purchase(&event_id, &s.str("t1"));
 
     s.env.ledger().set_timestamp(event_date + 1);
     s.contract.release_funds(&event_id, &s.organizer);
@@ -434,12 +438,12 @@ fn test_refund_after_release_rejected() {
     // Simpler test: funds released → escrow is 0 → refund path is unreachable because
     // event is Completed (not Cancelled), so EventNotCancelled is returned.
     let s = TestSetup::new();
-    let event_id = s.sym("ev_refund_after_rel");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_refund_after_rel");
+    let ticket_id = s.str("t1");
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.sym("Gone"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer, &event_id, &s.str("Gone"), &event_date, &50, &TestSetup::PRICE,
     );
     s.purchase(&event_id, &ticket_id);
 
@@ -458,13 +462,13 @@ fn test_refund_after_release_rejected() {
 #[test]
 fn test_purchase_on_cancelled_event_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_cancelled_buy");
+    let event_id = s.str("ev_cancelled_buy");
 
     s.create_event(&event_id, 10);
     s.contract.cancel_event(&event_id, &s.organizer);
 
     assert_err(
-        s.contract.try_purchase(&event_id, &s.buyer, &s.sym("t1")),
+        s.contract.try_purchase(&event_id, &s.buyer, &s.str("t1")),
         ContractError::EventNotActive,
     );
     // No XLM left the buyer's account
@@ -474,19 +478,19 @@ fn test_purchase_on_cancelled_event_rejected() {
 #[test]
 fn test_purchase_on_completed_event_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_completed_buy");
+    let event_id = s.str("ev_completed_buy");
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.sym("Done"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer, &event_id, &s.str("Done"), &event_date, &50, &TestSetup::PRICE,
     );
-    s.purchase(&event_id, &s.sym("t1"));
+    s.purchase(&event_id, &s.str("t1"));
     s.env.ledger().set_timestamp(event_date + 1);
     s.contract.release_funds(&event_id, &s.organizer);
 
     // Purchasing on a Completed event must be rejected
     assert_err(
-        s.contract.try_purchase(&event_id, &s.buyer2, &s.sym("t2")),
+        s.contract.try_purchase(&event_id, &s.buyer2, &s.str("t2")),
         ContractError::EventNotActive,
     );
 }
@@ -494,8 +498,8 @@ fn test_purchase_on_completed_event_rejected() {
 #[test]
 fn test_mark_used_by_non_organizer_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_scan_auth");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_scan_auth");
+    let ticket_id = s.str("t1");
 
     s.create_event(&event_id, 10);
     s.purchase(&event_id, &ticket_id);
@@ -512,8 +516,8 @@ fn test_mark_used_by_non_organizer_rejected() {
 #[test]
 fn test_mark_used_twice_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_scan_dbl");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_scan_dbl");
+    let ticket_id = s.str("t1");
 
     s.create_event(&event_id, 10);
     s.purchase(&event_id, &ticket_id);
@@ -529,8 +533,8 @@ fn test_mark_used_twice_rejected() {
 #[test]
 fn test_restricted_transfer_rejects_used_ticket() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_xfer_used");
-    let ticket_id = s.sym("t1");
+    let event_id = s.str("ev_xfer_used");
+    let ticket_id = s.str("t1");
     let new_owner = Address::generate(&s.env);
 
     s.create_event(&event_id, 10);
@@ -547,13 +551,13 @@ fn test_restricted_transfer_rejects_used_ticket() {
 #[test]
 fn test_cancel_already_completed_event_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_cancel_complete");
+    let event_id = s.str("ev_cancel_complete");
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.sym("Over"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer, &event_id, &s.str("Over"), &event_date, &50, &TestSetup::PRICE,
     );
-    s.purchase(&event_id, &s.sym("t1"));
+    s.purchase(&event_id, &s.str("t1"));
     s.env.ledger().set_timestamp(event_date + 1);
     s.contract.release_funds(&event_id, &s.organizer);
 
@@ -567,13 +571,13 @@ fn test_cancel_already_completed_event_rejected() {
 #[test]
 fn test_non_organizer_cannot_release_funds() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_rel_auth");
+    let event_id = s.str("ev_rel_auth");
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.sym("Fest"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer, &event_id, &s.str("Fest"), &event_date, &50, &TestSetup::PRICE,
     );
-    s.purchase(&event_id, &s.sym("t1"));
+    s.purchase(&event_id, &s.str("t1"));
     s.env.ledger().set_timestamp(event_date + 1);
 
     // buyer2 is not the organizer of this event
@@ -588,10 +592,10 @@ fn test_non_organizer_cannot_release_funds() {
 #[test]
 fn test_release_funds_on_cancelled_event_rejected() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_rel_cancelled");
+    let event_id = s.str("ev_rel_cancelled");
 
     s.create_event(&event_id, 10);
-    s.purchase(&event_id, &s.sym("t1"));
+    s.purchase(&event_id, &s.str("t1"));
     s.contract.cancel_event(&event_id, &s.organizer);
 
     assert_err(
@@ -603,21 +607,22 @@ fn test_release_funds_on_cancelled_event_rejected() {
 #[test]
 fn test_escrow_accounting_across_multiple_purchases() {
     let s = TestSetup::new();
-    let event_id = s.sym("ev_escrow");
+    let event_id = s.str("ev_escrow");
 
     s.create_event(&event_id, 10);
-    s.purchase(&event_id, &s.sym("t1"));
-    s.contract.purchase(&event_id, &s.buyer2, &s.sym("t2"));
+    s.purchase(&event_id, &s.str("t1"));
+    s.contract.purchase(&event_id, &s.buyer2, &s.str("t2"));
 
     // Both tickets paid; escrow must hold 2× price
     assert_eq!(s.xlm.balance(&s.contract.address), TestSetup::PRICE * 2);
 
     // Cancel and refund both; escrow must drain to 0
     s.contract.cancel_event(&event_id, &s.organizer);
-    s.contract.refund(&s.sym("t1"), &s.buyer);
-    s.contract.refund(&s.sym("t2"), &s.buyer2);
+    s.contract.refund(&s.str("t1"), &s.buyer);
+    s.contract.refund(&s.str("t2"), &s.buyer2);
 
     assert_eq!(s.xlm.balance(&s.contract.address), 0);
     assert_eq!(s.xlm.balance(&s.buyer), TestSetup::PRICE * 10);
     assert_eq!(s.xlm.balance(&s.buyer2), TestSetup::PRICE * 10);
 }
+

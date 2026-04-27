@@ -1,4 +1,5 @@
 import { Event, Ticket } from '../types';
+import { generateID } from './utils';
 
 // These functions represent the client-side wrappers that would communicate with our backend.
 // As per D-007, the backend builds and simulates the transaction, the client signs it, and the backend submits it.
@@ -22,14 +23,15 @@ export async function purchaseTicket(eventId: string, buyerPublicKey: string): P
   // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 2000));
   
-  return 'tx_hash_mock_purchase_123';
+  return generateID(); // Mock tx hash or ticket ID
 }
 
 export async function createEvent(params: CreateEventParams): Promise<string> {
   console.log(`[Soroban Mock] createEvent - Params:`, params);
   await new Promise((resolve) => setTimeout(resolve, 2000));
-  return 'evt_mock_new_456';
+  return generateID(); // Mock event ID
 }
+
 
 export async function releaseFunds(eventId: string, organizerPublicKey: string): Promise<string> {
   console.log(`[Soroban Mock] releaseFunds - Event: ${eventId}, Organizer: ${organizerPublicKey}`);
