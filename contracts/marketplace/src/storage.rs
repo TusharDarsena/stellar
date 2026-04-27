@@ -79,3 +79,22 @@ pub fn has_listing(env: &Env, seller: &Address, listing_id: &String) -> bool {
         .has(&DataKey::Listing(seller.clone(), listing_id.clone()))
 }
 
+// ---------------------------------------------------------------------------
+// Admin address (set once at initialize — contract-wide admin)
+// ---------------------------------------------------------------------------
+
+pub fn read_admin(env: &Env) -> Result<Address, ContractError> {
+    env.storage()
+        .instance()
+        .get(&DataKey::Admin)
+        .ok_or(ContractError::NotInitialized)
+}
+
+pub fn write_admin(env: &Env, address: &Address) {
+    env.storage().instance().set(&DataKey::Admin, address);
+    env.storage().instance().extend_ttl(TTL_MIN, TTL_TARGET);
+}
+
+pub fn has_admin(env: &Env) -> bool {
+    env.storage().instance().has(&DataKey::Admin)
+}

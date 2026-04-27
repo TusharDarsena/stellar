@@ -40,12 +40,15 @@ XLM_TESTNET="CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
 
 echo ""
 echo "4. Initializing TicketContract..."
+# Get deployer address from the organizer identity
+ADMIN_ADDRESS=$(stellar keys address organizer)
 stellar contract invoke \
   --id $TICKET_ID \
   --source organizer \
   --network testnet \
   -- \
   initialize \
+  --admin $ADMIN_ADDRESS \
   --marketplace_address $MARKETPLACE_ID \
   --xlm_token $XLM_TESTNET
 echo "✓ TicketContract initialized."
@@ -58,6 +61,7 @@ stellar contract invoke \
   --network testnet \
   -- \
   initialize \
+  --admin $ADMIN_ADDRESS \
   --ticket_contract_address $TICKET_ID \
   --royalty_rate 10
 echo "✓ MarketplaceContract initialized."

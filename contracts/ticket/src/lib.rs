@@ -25,15 +25,19 @@ impl TicketContract {
 
     /// Set the one marketplace address allowed to call restricted_transfer,
     /// and the trusted XLM SAC token address.
-    /// Can only be called once.
+    /// Can only be called once. Admin is authenticated to prevent front-running.
     pub fn initialize(
         env: Env,
+        admin: Address,
         marketplace_address: Address,
         xlm_token: Address,
     ) -> Result<(), ContractError> {
-        if storage::has_marketplace_address(&env) {
+        admin.require_auth();
+
+        if storage::has_admin(&env) {
             return Err(ContractError::AlreadyInitialized);
         }
+        storage::write_admin(&env, &admin);
         storage::write_marketplace_address(&env, &marketplace_address);
         // Store the trusted XLM token once — callers never supply it again (S-001).
         storage::write_xlm_token(&env, &xlm_token);
@@ -217,11 +221,7 @@ impl TicketContract {
     // Refund (pull-based, only when event is Cancelled — see D-002)
     // -----------------------------------------------------------------------
 
-    pub fn refund(
-        env: Env,
-        ticket_id: String,
-        attendee: Address,
-    ) -> Result<(), ContractError> {
+    pub fn refund(env: Env, ticket_id: String, attendee: Address) -> Result<(), ContractError> {
         attendee.require_auth();
 
         let mut ticket = storage::read_ticket(&env, &ticket_id)?;
@@ -288,11 +288,7 @@ impl TicketContract {
     // Mark used (at venue door after QR verification — see architecture.md QR section)
     // -----------------------------------------------------------------------
 
-    pub fn mark_used(
-        env: Env,
-        ticket_id: String,
-        organizer: Address,
-    ) -> Result<(), ContractError> {
+    pub fn mark_used(env: Env, ticket_id: String, organizer: Address) -> Result<(), ContractError> {
         organizer.require_auth();
 
         let mut ticket = storage::read_ticket(&env, &ticket_id)?;
@@ -336,4 +332,3 @@ impl TicketContract {
         storage::read_xlm_token(&env)
     }
 }
-

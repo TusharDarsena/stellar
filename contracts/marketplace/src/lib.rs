@@ -3,16 +3,17 @@
 mod error;
 mod events;
 mod storage;
-mod types;
 mod ticket_interface;
+mod types;
 
 #[cfg(test)]
 mod test;
 
-use soroban_sdk::{contract, contractimpl, token, Address, Env, String, Symbol};
 use crate::ticket_interface::TicketContractClient;
+use soroban_sdk::{contract, contractimpl, token, Address, Env, String, Symbol};
 
 use crate::error::ContractError;
+use crate::ticket_interface::EventStatus;
 use crate::types::{Listing, ListingStatus};
 
 #[contract]
@@ -26,14 +27,19 @@ impl MarketplaceContract {
 
     /// Set the TicketContract address and the royalty rate (integer percentage).
     /// Rate is clamped to [0, 100]. Can only be called once.
+    /// Admin is authenticated to prevent front-running.
     pub fn initialize(
         env: Env,
+        admin: Address,
         ticket_contract_address: Address,
         royalty_rate: i128,
     ) -> Result<(), ContractError> {
-        if storage::has_ticket_contract(&env) {
+        admin.require_auth();
+
+        if storage::has_admin(&env) {
             return Err(ContractError::AlreadyInitialized);
         }
+        storage::write_admin(&env, &admin);
         storage::write_ticket_contract(&env, &ticket_contract_address);
         // Clamp rate to [0, 100] — prevents invalid percentage at storage time.
         let clamped_rate = royalty_rate.max(0).min(100);
@@ -125,6 +131,11 @@ impl MarketplaceContract {
         let event = ticket_client.get_event(&true_event_id);
         let organizer = event.organizer;
 
+        // Block purchase of tickets for cancelled events (prevents arbitrage/refund drain).
+        if event.status == EventStatus::Cancelled {
+            return Err(ContractError::EventCancelled);
+        }
+
         // XLM token address from the trusted ticket contract storage (S-001).
         let xlm_token = ticket_client.get_xlm_token();
 
@@ -155,15 +166,20 @@ impl MarketplaceContract {
         let token_client = token::Client::new(&env, &xlm_token);
 
         // 1. Pull full ask_price from buyer into this contract.
-        token_client.transfer(&buyer, &env.current_contract_address(), &ask_price);
+        // Guard: skip if 0 — token SAC panics on 0 transfer.
+        if ask_price > 0 {
+            token_client.transfer(&buyer, &env.current_contract_address(), &ask_price);
+        }
 
         // 2. Push royalty to organizer (guard: skip if 0 — token SAC panics on 0 transfer).
         if royalty > 0 {
             token_client.transfer(&env.current_contract_address(), &organizer, &royalty);
         }
 
-        // 3. Push seller proceeds.
-        token_client.transfer(&env.current_contract_address(), &seller, &seller_proceeds);
+        // 3. Push seller proceeds (guard: skip if 0 — token SAC panics on 0 transfer).
+        if seller_proceeds > 0 {
+            token_client.transfer(&env.current_contract_address(), &seller, &seller_proceeds);
+        }
 
         // 4. Transfer ticket ownership via TicketContract's gated function.
         //    restricted_transfer uses marketplace.require_auth() — satisfied by
@@ -210,4 +226,3 @@ impl MarketplaceContract {
         storage::read_listing(&env, &seller, &listing_id)
     }
 }
-

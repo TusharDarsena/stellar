@@ -19,6 +19,9 @@ pub enum DataKey {
     /// The trusted XLM SAC address. Set once at initialize().
     /// Never supplied by callers — prevents fake-token escrow drain (S-001).
     XlmToken,
+    /// Admin address — set once at initialize, can re-initialize after contract upgrade.
+    /// Stored in instance() — contract-lifetime data.
+    Admin,
 }
 
 /// Event status lifecycle.
@@ -77,4 +80,3 @@ pub struct Ticket {
     /// distinguish the two terminal states. See D-018.
     pub status: TicketStatus,
 }
-

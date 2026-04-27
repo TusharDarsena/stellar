@@ -22,4 +22,7 @@ pub enum ContractError {
 
     // Stale listing (fail-fast before token transfers)
     TicketOwnerMismatch = 12,
+
+    // Event status
+    EventCancelled = 13,
 }

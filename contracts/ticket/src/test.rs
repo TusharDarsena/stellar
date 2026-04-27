@@ -49,7 +49,15 @@ impl<'a> TestSetup<'a> {
         let contract = TicketContractClient::new(&env, &env.register(TicketContract, ()));
         contract.initialize(&marketplace, &xlm.address);
 
-        Self { env, organizer, buyer, buyer2, marketplace, xlm, contract }
+        Self {
+            env,
+            organizer,
+            buyer,
+            buyer2,
+            marketplace,
+            xlm,
+            contract,
+        }
     }
 
     /// Create a standard event at timestamp + 86400 with the given capacity.
@@ -187,7 +195,10 @@ fn test_refund_when_cancelled_sets_refunded_status() {
     // Full price returned
     assert_eq!(s.xlm.balance(&s.buyer), TestSetup::PRICE * 10);
     // On-chain status is Refunded, not Used — analytics can distinguish them
-    assert_eq!(s.contract.get_ticket(&ticket_id).status, TicketStatus::Refunded);
+    assert_eq!(
+        s.contract.get_ticket(&ticket_id).status,
+        TicketStatus::Refunded
+    );
 }
 
 #[test]
@@ -271,13 +282,23 @@ fn test_restricted_transfer_rejects_when_marketplace_has_no_auth() {
     s.env.mock_auths(&[]);
 
     let result = s.contract.try_restricted_transfer(&ticket_id, &new_owner);
-    assert!(result.is_err(), "restricted_transfer must fail without marketplace auth");
+    assert!(
+        result.is_err(),
+        "restricted_transfer must fail without marketplace auth"
+    );
 
     // Ticket state must be completely unchanged after the failed call
     s.env.mock_all_auths();
     let ticket = s.contract.get_ticket(&ticket_id);
-    assert_eq!(ticket.owner, s.buyer, "owner must not change on failed transfer");
-    assert_eq!(ticket.status, TicketStatus::Active, "status must not change on failed transfer");
+    assert_eq!(
+        ticket.owner, s.buyer,
+        "owner must not change on failed transfer"
+    );
+    assert_eq!(
+        ticket.status,
+        TicketStatus::Active,
+        "status must not change on failed transfer"
+    );
 }
 
 // ===========================================================================
@@ -290,7 +311,8 @@ fn test_double_initialization_rejected() {
     let other_marketplace = Address::generate(&s.env);
     // Second initialize call must be rejected regardless of arguments
     assert_err(
-        s.contract.try_initialize(&other_marketplace, &s.xlm.address),
+        s.contract
+            .try_initialize(&other_marketplace, &s.xlm.address),
         ContractError::AlreadyInitialized,
     );
 }
@@ -322,27 +344,62 @@ fn test_invalid_event_params_rejected() {
 
     // Zero capacity
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.str("ev_a"), &s.str("Bad"), &future, &0, &price),
+        s.contract.try_create_event(
+            &s.organizer,
+            &s.str("ev_a"),
+            &s.str("Bad"),
+            &future,
+            &0,
+            &price,
+        ),
         ContractError::InvalidCapacity,
     );
     // Negative capacity
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.str("ev_b"), &s.str("Bad"), &future, &-1, &price),
+        s.contract.try_create_event(
+            &s.organizer,
+            &s.str("ev_b"),
+            &s.str("Bad"),
+            &future,
+            &-1,
+            &price,
+        ),
         ContractError::InvalidCapacity,
     );
     // Zero price
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.str("ev_c"), &s.str("Bad"), &future, &100, &0),
+        s.contract.try_create_event(
+            &s.organizer,
+            &s.str("ev_c"),
+            &s.str("Bad"),
+            &future,
+            &100,
+            &0,
+        ),
         ContractError::InvalidPrice,
     );
     // Negative price
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.str("ev_d"), &s.str("Bad"), &future, &100, &-1),
+        s.contract.try_create_event(
+            &s.organizer,
+            &s.str("ev_d"),
+            &s.str("Bad"),
+            &future,
+            &100,
+            &-1,
+        ),
         ContractError::InvalidPrice,
     );
     // Date in the past (timestamp 0 == ledger start in tests)
     assert_err(
-        s.contract.try_create_event(&s.organizer, &s.str("ev_e"), &s.str("Bad"), &0u64, &100, &price),
+        s.contract.try_create_event(
+            &s.organizer,
+            &s.str("ev_e"),
+            &s.str("Bad"),
+            &0u64,
+            &100,
+            &price,
+        ),
         ContractError::EventDateInPast,
     );
 }
@@ -363,7 +420,10 @@ fn test_refund_requires_event_cancelled() {
     );
 
     // Ticket must still be Active — no state leaked
-    assert_eq!(s.contract.get_ticket(&ticket_id).status, TicketStatus::Active);
+    assert_eq!(
+        s.contract.get_ticket(&ticket_id).status,
+        TicketStatus::Active
+    );
     // Buyer's XLM must still be in escrow
     assert_eq!(s.xlm.balance(&s.contract.address), TestSetup::PRICE);
 }
@@ -417,7 +477,12 @@ fn test_double_release_funds_rejected() {
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.str("Fest"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer,
+        &event_id,
+        &s.str("Fest"),
+        &event_date,
+        &50,
+        &TestSetup::PRICE,
     );
     s.purchase(&event_id, &s.str("t1"));
 
@@ -443,7 +508,12 @@ fn test_refund_after_release_rejected() {
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.str("Gone"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer,
+        &event_id,
+        &s.str("Gone"),
+        &event_date,
+        &50,
+        &TestSetup::PRICE,
     );
     s.purchase(&event_id, &ticket_id);
 
@@ -482,7 +552,12 @@ fn test_purchase_on_completed_event_rejected() {
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.str("Done"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer,
+        &event_id,
+        &s.str("Done"),
+        &event_date,
+        &50,
+        &TestSetup::PRICE,
     );
     s.purchase(&event_id, &s.str("t1"));
     s.env.ledger().set_timestamp(event_date + 1);
@@ -510,7 +585,10 @@ fn test_mark_used_by_non_organizer_rejected() {
         ContractError::OnlyOrganizerAllowed,
     );
     // Ticket must still be Active
-    assert_eq!(s.contract.get_ticket(&ticket_id).status, TicketStatus::Active);
+    assert_eq!(
+        s.contract.get_ticket(&ticket_id).status,
+        TicketStatus::Active
+    );
 }
 
 #[test]
@@ -555,7 +633,12 @@ fn test_cancel_already_completed_event_rejected() {
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.str("Over"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer,
+        &event_id,
+        &s.str("Over"),
+        &event_date,
+        &50,
+        &TestSetup::PRICE,
     );
     s.purchase(&event_id, &s.str("t1"));
     s.env.ledger().set_timestamp(event_date + 1);
@@ -575,7 +658,12 @@ fn test_non_organizer_cannot_release_funds() {
     let event_date = s.env.ledger().timestamp() + 100;
 
     s.contract.create_event(
-        &s.organizer, &event_id, &s.str("Fest"), &event_date, &50, &TestSetup::PRICE,
+        &s.organizer,
+        &event_id,
+        &s.str("Fest"),
+        &event_date,
+        &50,
+        &TestSetup::PRICE,
     );
     s.purchase(&event_id, &s.str("t1"));
     s.env.ledger().set_timestamp(event_date + 1);
@@ -625,4 +713,3 @@ fn test_escrow_accounting_across_multiple_purchases() {
     assert_eq!(s.xlm.balance(&s.buyer), TestSetup::PRICE * 10);
     assert_eq!(s.xlm.balance(&s.buyer2), TestSetup::PRICE * 10);
 }
-

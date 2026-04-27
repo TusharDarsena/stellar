@@ -1,11 +1,8 @@
 #![cfg(test)]
 
-use soroban_sdk::{
-    testutils::Address as _,
-    token, Address, Env, String, Symbol,
-};
-use ticket::TicketContract;
 use crate::ticket_interface::TicketContractClient;
+use soroban_sdk::{testutils::Address as _, token, Address, Env, String, Symbol};
+use ticket::TicketContract;
 use token::Client as TokenClient;
 use token::StellarAssetClient as TokenAdminClient;
 
@@ -30,7 +27,7 @@ struct TestSetup<'a> {
 
 impl<'a> TestSetup<'a> {
     const PRICE: i128 = 10_000_000; // 1 XLM in stroops
-    const ROYALTY_RATE: i128 = 10;  // 10%
+    const ROYALTY_RATE: i128 = 10; // 10%
 
     fn new() -> Self {
         Self::new_with_rate(Self::ROYALTY_RATE)
@@ -67,7 +64,16 @@ impl<'a> TestSetup<'a> {
         // Initialize MarketplaceContract with ticket address + royalty rate
         marketplace.initialize(&ticket_addr, &rate);
 
-        Self { env, organizer, seller, buyer, buyer2, xlm, ticket, marketplace }
+        Self {
+            env,
+            organizer,
+            seller,
+            buyer,
+            buyer2,
+            xlm,
+            ticket,
+            marketplace,
+        }
     }
 
     /// Create a standard event (capacity 100, price 1 XLM, date +1 day).
@@ -89,13 +95,8 @@ impl<'a> TestSetup<'a> {
 
     /// List a ticket as the seller.
     fn list(&self, listing_id: &String, ticket_id: &String, event_id: &String, price: i128) {
-        self.marketplace.list_ticket(
-            &self.seller,
-            listing_id,
-            ticket_id,
-            event_id,
-            &price,
-        );
+        self.marketplace
+            .list_ticket(&self.seller, listing_id, ticket_id, event_id, &price);
     }
 
     fn str(&self, s: &str) -> String {
@@ -156,9 +157,18 @@ fn test_list_and_buy_full_flow() {
     let expected_royalty = 1_000_000i128;
     let expected_proceeds = TestSetup::PRICE - expected_royalty;
 
-    assert_eq!(s.xlm.balance(&s.organizer), organizer_balance_before + expected_royalty);
-    assert_eq!(s.xlm.balance(&s.seller), seller_balance_before + expected_proceeds);
-    assert_eq!(s.xlm.balance(&s.buyer), buyer_balance_before - TestSetup::PRICE);
+    assert_eq!(
+        s.xlm.balance(&s.organizer),
+        organizer_balance_before + expected_royalty
+    );
+    assert_eq!(
+        s.xlm.balance(&s.seller),
+        seller_balance_before + expected_proceeds
+    );
+    assert_eq!(
+        s.xlm.balance(&s.buyer),
+        buyer_balance_before - TestSetup::PRICE
+    );
     // Contract holds nothing — all XLM distributed
     assert_eq!(s.xlm.balance(&s.marketplace.address), 0);
 }
@@ -193,20 +203,24 @@ fn test_ceiling_royalty_micro_transaction() {
         &String::from_str(&s.env, "Micro"),
         &(s.env.ledger().timestamp() + 86_400),
         &100,
-        &9,  // 9 stroops
+        &9, // 9 stroops
     );
     let ticket_id = s.str("t1");
     let listing_id = s.str("l1");
 
     s.ticket.purchase(&event_id, &s.seller, &ticket_id);
 
-    s.marketplace.list_ticket(&s.seller, &listing_id, &ticket_id, &event_id, &9);
+    s.marketplace
+        .list_ticket(&s.seller, &listing_id, &ticket_id, &event_id, &9);
     s.marketplace.buy_listing(&s.seller, &listing_id, &s.buyer);
 
     // Ceiling: (9 * 10 + 99) / 100 = 189 / 100 = 1 (not 0)
     // Organizer must receive at least 1 stroop — no royalty evasion via micro-pricing
     let organizer_balance = s.xlm.balance(&s.organizer);
-    assert_eq!(organizer_balance, 1, "ceiling division must give organizer at least 1 stroop");
+    assert_eq!(
+        organizer_balance, 1,
+        "ceiling division must give organizer at least 1 stroop"
+    );
 }
 
 #[test]
@@ -274,7 +288,9 @@ fn test_stale_listing_fails_fast_ticket_used() {
 
     // Buy attempt should fail (entire tx rolled back — no XLM lost by buyer)
     let buyer_balance_before = s.xlm.balance(&s.buyer);
-    let result = s.marketplace.try_buy_listing(&s.seller, &listing_id, &s.buyer);
+    let result = s
+        .marketplace
+        .try_buy_listing(&s.seller, &listing_id, &s.buyer);
     assert!(result.is_err(), "buy_listing must fail for a used ticket");
     // Buyer's balance unchanged — rollback worked
     assert_eq!(s.xlm.balance(&s.buyer), buyer_balance_before);
@@ -305,7 +321,13 @@ fn test_event_id_forgery_blocked() {
 
     let listing_id = s.str("l1");
     // Attacker lists with the FAKE event_id hoping royalties go to them as organizer
-    s.marketplace.list_ticket(&s.seller, &listing_id, &ticket_id, &fake_event_id, &TestSetup::PRICE);
+    s.marketplace.list_ticket(
+        &s.seller,
+        &listing_id,
+        &ticket_id,
+        &fake_event_id,
+        &TestSetup::PRICE,
+    );
 
     let seller_before = s.xlm.balance(&s.seller);
     let organizer_before = s.xlm.balance(&s.organizer);
@@ -321,7 +343,10 @@ fn test_event_id_forgery_blocked() {
         "royalty must go to real organizer despite forged event_id in listing"
     );
     // Seller receives only the proceeds, not the royalty
-    assert_eq!(s.xlm.balance(&s.seller), seller_before + TestSetup::PRICE - royalty);
+    assert_eq!(
+        s.xlm.balance(&s.seller),
+        seller_before + TestSetup::PRICE - royalty
+    );
 }
 
 #[test]
@@ -369,7 +394,13 @@ fn test_duplicate_listing_id_same_seller_rejected() {
     s.list(&listing_id, &s.str("t1"), &event_id, TestSetup::PRICE);
     // Same seller, same listing_id must be rejected
     assert_err(
-        s.marketplace.try_list_ticket(&s.seller, &listing_id, &s.str("t2"), &event_id, &TestSetup::PRICE),
+        s.marketplace.try_list_ticket(
+            &s.seller,
+            &listing_id,
+            &s.str("t2"),
+            &event_id,
+            &TestSetup::PRICE,
+        ),
         ContractError::ListingAlreadyExists,
     );
 }
@@ -386,13 +417,31 @@ fn test_different_sellers_can_reuse_listing_id() {
     s.purchase(&event_id, &s.str("t2"), &s.buyer2);
 
     // seller lists as themselves
-    s.marketplace.list_ticket(&s.seller, &listing_id, &s.str("t1"), &event_id, &TestSetup::PRICE);
+    s.marketplace.list_ticket(
+        &s.seller,
+        &listing_id,
+        &s.str("t1"),
+        &event_id,
+        &TestSetup::PRICE,
+    );
     // buyer2 lists with the same listing_id — must succeed (different namespace)
-    s.marketplace.list_ticket(&s.buyer2, &listing_id, &s.str("t2"), &event_id, &TestSetup::PRICE);
+    s.marketplace.list_ticket(
+        &s.buyer2,
+        &listing_id,
+        &s.str("t2"),
+        &event_id,
+        &TestSetup::PRICE,
+    );
 
     // Both listings are independently accessible
-    assert_eq!(s.marketplace.get_listing(&s.seller, &listing_id).status, ListingStatus::Open);
-    assert_eq!(s.marketplace.get_listing(&s.buyer2, &listing_id).status, ListingStatus::Open);
+    assert_eq!(
+        s.marketplace.get_listing(&s.seller, &listing_id).status,
+        ListingStatus::Open
+    );
+    assert_eq!(
+        s.marketplace.get_listing(&s.buyer2, &listing_id).status,
+        ListingStatus::Open
+    );
 }
 
 #[test]
@@ -408,7 +457,8 @@ fn test_buy_sold_listing_rejected() {
     s.marketplace.buy_listing(&s.seller, &listing_id, &s.buyer);
 
     assert_err(
-        s.marketplace.try_buy_listing(&s.seller, &listing_id, &s.buyer2),
+        s.marketplace
+            .try_buy_listing(&s.seller, &listing_id, &s.buyer2),
         ContractError::ListingNotOpen,
     );
 }
@@ -426,7 +476,8 @@ fn test_buy_cancelled_listing_rejected() {
     s.marketplace.cancel_listing(&s.seller, &listing_id);
 
     assert_err(
-        s.marketplace.try_buy_listing(&s.seller, &listing_id, &s.buyer),
+        s.marketplace
+            .try_buy_listing(&s.seller, &listing_id, &s.buyer),
         ContractError::ListingNotOpen,
     );
 }
@@ -443,7 +494,8 @@ fn test_buyer_is_seller_rejected() {
     s.list(&listing_id, &ticket_id, &event_id, TestSetup::PRICE);
 
     assert_err(
-        s.marketplace.try_buy_listing(&s.seller, &listing_id, &s.seller),
+        s.marketplace
+            .try_buy_listing(&s.seller, &listing_id, &s.seller),
         ContractError::BuyerIsSeller,
     );
 }
@@ -458,14 +510,15 @@ fn test_negative_price_rejected() {
     s.purchase(&event_id, &ticket_id, &s.seller);
 
     assert_err(
-        s.marketplace.try_list_ticket(&s.seller, &s.str("l1"), &ticket_id, &event_id, &-1),
+        s.marketplace
+            .try_list_ticket(&s.seller, &s.str("l1"), &ticket_id, &event_id, &-1),
         ContractError::InvalidPrice,
     );
     assert_err(
-        s.marketplace.try_list_ticket(&s.seller, &s.str("l2"), &ticket_id, &event_id, &0),
+        s.marketplace
+            .try_list_ticket(&s.seller, &s.str("l2"), &ticket_id, &event_id, &0),
         ContractError::InvalidPrice,
     );
-
 }
 
 #[test]
@@ -505,5 +558,8 @@ fn test_cancel_by_different_seller_rejected() {
         ContractError::ListingNotFound,
     );
     // seller's listing is still Open
-    assert_eq!(s.marketplace.get_listing(&s.seller, &listing_id).status, ListingStatus::Open);
+    assert_eq!(
+        s.marketplace.get_listing(&s.seller, &listing_id).status,
+        ListingStatus::Open
+    );
 }

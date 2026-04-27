@@ -6,9 +6,7 @@ use crate::storage;
 /// Add stroops to the escrow balance for an event.
 pub fn add_to_escrow(env: &Env, event_id: &String, amount: i128) -> Result<(), ContractError> {
     let current = storage::read_escrow(env, event_id);
-    let updated = current
-        .checked_add(amount)
-        .ok_or(ContractError::Overflow)?;
+    let updated = current.checked_add(amount).ok_or(ContractError::Overflow)?;
     storage::write_escrow(env, event_id, updated);
     Ok(())
 }
@@ -31,4 +29,3 @@ pub fn subtract_from_escrow(
 pub fn get_escrow_balance(env: &Env, event_id: &String) -> i128 {
     storage::read_escrow(env, event_id)
 }
-

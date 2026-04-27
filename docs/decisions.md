@@ -28,9 +28,15 @@ Event metadata (name, date, price, capacity) stored on-chain. Negligible ledger 
 
 Check `|now - payload_timestamp| < 30`. **Not** `floor(unix/30)` — that fails a QR generated at second 29 when scanned at second 31 (2 seconds later, but different window). See `lib/qr.ts`.
 
-## D-007 — Server builds and simulates transactions, client only signs
+## D-007 — Frontend-only transaction building for MVP (revised)
 
-Server fetches sequence number, builds TransactionEnvelope, simulates (for correct fee), returns unsigned XDR. Client signs. Client sends back. Server submits. Never build client-side — sequence number diverges under concurrent usage.
+**Original intent**: Server builds/simulates, client signs, server submits to prevent sequence number divergence under concurrent load.
+
+**MVP revision**: Each user signs with their own keypair (Freighter for organizers, Burner Wallet for attendees — D-028). There is no shared backend signer and no concurrent writes to the same account. `AssembledTransaction.signAndSend()` from `@stellar/stellar-sdk` handles build → simulate → sign → submit in a single call, fetching a fresh sequence number each time. Sequence divergence cannot occur in a single-user-per-keypair model.
+
+**Rule for MVP**: Use `AssembledTransaction` directly in `lib/soroban.ts`. No backend XDR endpoint needed. Re-evaluate if a shared organizer hot-wallet is ever introduced (that is the case where a submission queue is required).
+
+**Files affected**: `lib/soroban.ts`. `AGENTS.md` hard rule updated accordingly.
 
 ## D-008 — Web3Auth for attendees, Freighter for organizers
 
@@ -113,8 +119,30 @@ Migrated `wallet` and `txState` from local `useState` in `App.tsx` to a global Z
 
 `AppHeader` and `BottomNav` now contain internal visibility logic based on `currentView`. Instead of `App.tsx` conditionally rendering them, the components themselves return `null` for "standalone" views (like Scanner or Dashboard). This prevents "double-header" artifacts where both a global header and a page-specific header would render simultaneously.
 
-## D-027 — Standardized QR Payload Format
+## D-027 — Standardized QR Payload Format (extended by D-028)
 
-Adopted `{wallet_address}:{ticket_id}:{timestamp}` as the standard payload for ticket QRs. The 30s rotation ensures that even if a QR is photographed, it expires quickly. The format is designed to be easily parsable by the `ScannerPage` and compatible with future `ed25519` signature verification (D-006).
+Base payload: `{wallet_address}:{ticket_id}:{timestamp}`. Extended to include an `ed25519` signature field — see D-028 for the full signed format. The 30s rotation ensures a photographed QR expires before it can be replayed. `ScannerPage` parses by splitting on `:` (first 3 fields) and treating the remainder as the base64 signature.
 
+## D-028 — Burner Wallet for Attendees (MVP)
 
+`Keypair.random()` is called when an attendee clicks "Connect". The secret key is stored in `localStorage` under `stellar_burner_secret`. The public key is the attendee's on-chain identity. The account is funded via Friendbot (`https://friendbot.stellar.org/?addr=<pubkey>`) immediately after generation.
+
+**Why not Web3Auth**: Web3Auth requires an API key, OAuth app registration, and a more complex auth flow. Deferred to post-MVP.
+
+**Security note**: `localStorage` is not encrypted. Acceptable for a testnet hackathon demo where funds are worthless. Mainnet would require either Web3Auth (server-side key custody) or a hardware-backed solution.
+
+**QR signing**: The full signed payload format is `{wallet_address}:{ticket_id}:{timestamp}:{base64Signature}` where the signature covers the UTF-8 bytes of `{wallet_address}:{ticket_id}:{timestamp}`. `lib/qr.ts` is the only file that builds or verifies this format. See D-005, D-006.
+
+**walletType field**: `useWallet` exposes `walletType: 'freighter' | 'burner' | null`. Only `burner` wallets have a private key in state; `frighter` wallets never expose one.
+
+## D-029 — RPC Event Polling for List Queries
+
+The `TicketContract` has no `get_all_events()` or `get_tickets_by_owner()` — only keyed lookups by ID. Because D-004 prohibits a database for MVP, the only way to discover IDs is via the Soroban RPC `getEvents` endpoint.
+
+**Browse page**: `useEvents` calls `SorobanRpc.Server.getEvents({ filters: [{ type: 'contract', contractIds: [TICKET_CONTRACT_ID], topics: [[xdr.ScVal...('ev_create')]] }] })`. Each event's `value` contains the `event_id`. The hook then calls `get_event(event_id)` for current state (capacity, status).
+
+**My Tickets page**: `useTickets` filters `tk_buy` events where topic[1] (the buyer address) matches the connected wallet's public key. Each event's topic[0] contains the `ticket_id`. The hook then calls `get_ticket(ticket_id)` for current status (Active / Used / Refunded).
+
+**Polling**: Both hooks poll every 30s via `setInterval`. A manual `invalidate()` method resets the timer and re-fetches immediately (called after a purchase).
+
+**Ledger range**: RPC nodes only retain events for a finite ledger window (varies by node). On testnet with few events and recent deployment, fetching from ledger 0 is acceptable. A production indexer (e.g., Stellar Hubble or Mercury) would be needed for mainnet.

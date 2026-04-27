@@ -59,10 +59,9 @@ NFT event ticketing on Stellar. Two Soroban smart contracts + React/Vite fronten
 | ----------------------- | ----------------------------------------------------------------------------------------------------- |
 | `lib/constants.ts`      | ⚠️ Contract addresses, RPC URL, network passphrase. The **only** place. Hardcoding elsewhere is a bug. |
 | `lib/soroban.ts`        | Build → simulate → prepare → submit. Only file importing `SorobanRpc`.                                |
-| `lib/stellar.ts`        | Horizon utilities, `Keypair.verify()`. No transaction building.                                       |
+| `lib/stellar.ts`        | `Keypair.verify()`, Burner Wallet generation (`Keypair.random()`), Friendbot funding. No tx building. |
 | `lib/qr.ts`             | QR payload build + verify. Zero network calls.                                                        |
-| `lib/web3auth.ts`       | Web3Auth init + login. Private key never leaves this file.                                            |
-| `hooks/useWallet.ts`    | Unified Freighter + Web3Auth hook. Nothing outside knows which provider is active.                    |
+| `hooks/useWallet.ts`    | Unified Freighter + Burner Wallet hook. `walletType: 'freighter' \| 'burner' \| null`. Nothing outside knows which provider is active. Web3Auth deferred (D-028). |
 | `hooks/useEvents.ts`    | Event list with 30s cache. Never fetch inside render.                                                 |
 | `hooks/useTickets.ts`   | Tickets for current wallet. Call `invalidate()` after purchase.                                       |
 | `components/shared/`    | UI primitives. No blockchain logic.                                                                   |
@@ -89,10 +88,12 @@ NFT event ticketing on Stellar. Two Soroban smart contracts + React/Vite fronten
 - Inter-contract calls: use the generated `#[contractclient]` type — never `env.call_contract()`
 
 ### Frontend
-- Server builds + simulates, client signs, server submits — never build transactions client-side
+- `AssembledTransaction.signAndSend()` handles build → simulate → sign → submit client-side (D-007 revised). No backend XDR server for MVP.
 - All SDK calls go through `lib/soroban.ts` or `lib/stellar.ts` — components never import `@stellar/stellar-sdk`
 - 30s cache TTL in all hooks — never fetch inside render
-- `constants.ts` only for addresses and URLs
+- `constants.ts` reads from `import.meta.env` only — never hardcode contract IDs
+- Attendee wallets are Burner Wallets (D-028): `Keypair.random()`, secret in `localStorage`, funded via Friendbot
+- Event/ticket lists are discovered via `SorobanRpc.getEvents()` — no `get_all_*` contract methods exist (D-029)
 
 ---
 
@@ -100,7 +101,7 @@ NFT event ticketing on Stellar. Two Soroban smart contracts + React/Vite fronten
 
 - **No SAC tickets.** Custom NFT — gated transfer (`restricted_transfer`) requires it. D-001.
 - **No auto-refund loops.** Hits Soroban instruction limits. Refunds are pull-based. D-002.
-- **No client-side tx building.** Sequence number divergence. D-007.
+- **No shared backend signer for MVP.** `AssembledTransaction` is used client-side — safe because each user has their own keypair. D-007 revised.
 - **No `env.call_contract()`.** Use generated client.
 - **No `soroban-auth` / `Signature` / `Identifier` types.** Ancient SDK (0.4.x). Auth is `address.require_auth()`.
 - **No hardcoded addresses outside `constants.ts`.**

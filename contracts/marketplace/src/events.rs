@@ -20,4 +20,3 @@ pub fn emit_cancelled(env: &Env, listing_id: &String, seller: &Address) {
         seller.clone(),
     );
 }
-

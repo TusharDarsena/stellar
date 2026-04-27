@@ -60,7 +60,7 @@ pub trait TicketInterface {
     fn restricted_transfer(env: Env, ticket_id: String, new_owner: Address);
 
     // Called in test setup helpers only
-    fn initialize(env: Env, marketplace_address: Address, xlm_token: Address);
+    fn initialize(env: Env, admin: Address, marketplace_address: Address, xlm_token: Address);
     fn create_event(
         env: Env,
         organizer: Address,
@@ -74,4 +74,3 @@ pub trait TicketInterface {
     fn cancel_event(env: Env, event_id: String, organizer: Address);
     fn mark_used(env: Env, ticket_id: String, organizer: Address);
 }
-

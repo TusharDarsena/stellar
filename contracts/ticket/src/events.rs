@@ -46,4 +46,3 @@ pub fn emit_restricted_transfer(env: &Env, ticket_id: &String, new_owner: &Addre
         new_owner.clone(),
     );
 }
-

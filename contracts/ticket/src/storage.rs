@@ -29,9 +29,7 @@ pub fn write_marketplace_address(env: &Env, address: &Address) {
 }
 
 pub fn has_marketplace_address(env: &Env) -> bool {
-    env.storage()
-        .instance()
-        .has(&DataKey::MarketplaceAddress)
+    env.storage().instance().has(&DataKey::MarketplaceAddress)
 }
 
 // ---------------------------------------------------------------------------
@@ -118,9 +116,7 @@ pub fn read_xlm_token(env: &Env) -> Result<Address, ContractError> {
 }
 
 pub fn write_xlm_token(env: &Env, address: &Address) {
-    env.storage()
-        .instance()
-        .set(&DataKey::XlmToken, address);
+    env.storage().instance().set(&DataKey::XlmToken, address);
     env.storage().instance().extend_ttl(TTL_MIN, TTL_TARGET);
 }
 
@@ -128,3 +124,22 @@ pub fn has_xlm_token(env: &Env) -> bool {
     env.storage().instance().has(&DataKey::XlmToken)
 }
 
+// ---------------------------------------------------------------------------
+// Admin address (set once at initialize — contract-wide admin)
+// ---------------------------------------------------------------------------
+
+pub fn read_admin(env: &Env) -> Result<Address, ContractError> {
+    env.storage()
+        .instance()
+        .get(&DataKey::Admin)
+        .ok_or(ContractError::NotInitialized)
+}
+
+pub fn write_admin(env: &Env, address: &Address) {
+    env.storage().instance().set(&DataKey::Admin, address);
+    env.storage().instance().extend_ttl(TTL_MIN, TTL_TARGET);
+}
+
+pub fn has_admin(env: &Env) -> bool {
+    env.storage().instance().has(&DataKey::Admin)
+}

@@ -13,6 +13,8 @@ pub enum DataKey {
     /// Royalty rate as integer percentage [0, 100] — set once at initialize,
     /// stored in instance(). See decisions.md D-010.
     RoyaltyRate,
+    /// Admin address — set once at initialize, can re-initialize after contract upgrade.
+    Admin,
 }
 
 /// Listing lifecycle.
@@ -22,6 +24,15 @@ pub enum ListingStatus {
     Open,
     Sold,
     Cancelled,
+}
+
+/// Event status — mirrors ticket::types::EventStatus for cross-contract calls.
+#[derive(Clone, PartialEq, Debug)]
+#[contracttype]
+pub enum EventStatus {
+    Active,
+    Cancelled,
+    Completed,
 }
 
 /// A secondary-market listing record stored on-chain.
@@ -37,4 +48,3 @@ pub struct Listing {
     pub ask_price: i128,
     pub status: ListingStatus,
 }
-
