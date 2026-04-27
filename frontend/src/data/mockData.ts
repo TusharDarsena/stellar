@@ -115,14 +115,12 @@ export const MOCK_TICKETS: Ticket[] = [
     ticketId: 'xlr_8293_stellar_9021_f92_vlt',
     eventId: 'evt_1',
     owner: 'G...3k9P',
-    isUsed: false,
-    purchaseTimestamp: 1720000000
+    status: 'Active' as const,
   },
   {
     ticketId: 'st_9942_vault_1102_a33_chain',
     eventId: 'evt_5',
     owner: 'G...3k9P',
-    isUsed: false,
-    purchaseTimestamp: 1720000000
+    status: 'Active' as const,
   }
 ];

@@ -15,7 +15,7 @@ export function TicketCard({ ticket, event, onShowQR }: TicketCardProps) {
         <div className="flex justify-between items-start mb-6">
           <div>
             <span className="bg-[#7C5CFF]/10 text-[#7C5CFF] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-2 inline-block">
-              {ticket.isUsed ? 'USED' : 'VIP ACCESS'}
+              {ticket.status !== 'Active' ? 'USED' : 'VIP ACCESS'}
             </span>
             <h3 className="text-2xl font-semibold leading-tight text-white">{event.name}</h3>
           </div>
@@ -44,11 +44,11 @@ export function TicketCard({ ticket, event, onShowQR }: TicketCardProps) {
         
         <button 
           onClick={() => onShowQR(ticket.ticketId)}
-          disabled={ticket.isUsed}
+          disabled={ticket.status !== 'Active'}
           className="w-full py-3 bg-[#7C5CFF] text-[#EAEFF4] font-semibold text-xs rounded-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>qr_code_2</span>
-          {ticket.isUsed ? 'TICKET USED' : 'SHOW QR'}
+          {ticket.status !== 'Active' ? 'TICKET USED' : 'SHOW QR'}
         </button>
       </div>
     </div>

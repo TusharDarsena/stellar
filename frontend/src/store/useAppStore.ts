@@ -11,6 +11,6 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   txState: { status: 'idle' },
   setTxState: (state) => set({ txState: state }),
-  wallet: { isConnected: false, publicKey: null, walletType: null, xlmBalance: null },
+  wallet: { isConnected: false, publicKey: null, walletType: null, xlmBalance: null, secretKey: null, signFn: null },
   setWallet: (state) => set({ wallet: state }),
 }));

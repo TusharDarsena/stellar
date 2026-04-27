@@ -21,7 +21,7 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
     }
 
     const ticket = MOCK_TICKETS.find(t => t.ticketId === ticketId);
-    if (ticket && !ticket.isUsed) {
+    if (ticket && ticket.status === 'Active') {
       setScanResult('success');
     } else {
       setScanResult('error');
