@@ -68,11 +68,12 @@ export async function fetchXlmBalance(publicKey: string): Promise<string> {
  * The returned function matches the SignFn type so soroban.ts stays wallet-agnostic.
  */
 export function buildBurnerSignFn(secretKey: string) {
-  return async (xdr: string, _opts: { networkPassphrase: string }): Promise<string> => {
+  return async (xdr: string, opts?: { networkPassphrase?: string; address?: string }): Promise<{ signedTxXdr: string }> => {
     const { TransactionBuilder } = await import('@stellar/stellar-sdk');
     const keypair = Keypair.fromSecret(secretKey);
-    const tx = TransactionBuilder.fromXDR(xdr, _opts.networkPassphrase);
+    const passphrase = opts?.networkPassphrase || "Test SDF Network ; September 2015";
+    const tx = TransactionBuilder.fromXDR(xdr, passphrase);
     tx.sign(keypair);
-    return tx.toXDR();
+    return { signedTxXdr: tx.toXDR() };
   };
 }

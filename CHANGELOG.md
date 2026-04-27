@@ -226,3 +226,36 @@ Finalized the frontend integration, transitioning the UI from mock data to real 
 ### What's next
 - Final testing on Stellar Testnet for end-to-end QR scan verification.
 - MVP deployment to production environments.
+
+---
+
+## Session 8 — 2026-04-28
+
+### Context
+Production build hardening and architectural gap documentation. After the full 8-phase integration landed, `npm run build` revealed a set of SDK type mismatches and Vite interop issues that had been hidden by `tsc --noEmit` running against a looser tsconfig. All were fixed and the build now passes cleanly.
+
+### Decisions logged
+- **D-030** — `refund()` returns the original mint price, not the secondary-market resale price. Acceptable for MVP; V2 would require storing actual paid price per ticket. Documented in `decisions.md`.
+- **D-031** — `release_funds` is callable as soon as `ledger.timestamp >= event.date_unix`. A rug-pull vector exists (organizer drains escrow before anyone attends). Mitigation deferred to V2 (require scanned-ticket threshold). Documented in `decisions.md`.
+
+### What was built / fixed
+- **`docs/decisions.md`**: Added D-030 and D-031 documenting known economic limitations of the MVP escrow model (secondary market refund gap, escrow release timing).
+- **Contract bindings interop fix** (`contracts/ticket/src/index.ts`, `contracts/marketplace/src/index.ts`):
+  - Commented out `export * from '@stellar/stellar-sdk'` — this wildcard re-export was causing Vite's ESM interop to fail at dev-server startup with a *"cannot interop export \*"* warning that broke HMR.
+  - The `export * as contract` and `export * as rpc` named namespace re-exports are preserved and work correctly.
+- **`SignFn` type overhaul** (`src/types/index.ts`, `src/hooks/useWallet.ts`, `src/lib/stellar.ts`):
+  - The `@stellar/stellar-sdk/contract` `SignTransaction` type requires the callback to return `{ signedTxXdr: string }`, not a raw `string`. Updated `SignFn` return type to match.
+  - Made the `opts` parameter optional (`opts?`) to satisfy the SDK's looser call-site signature.
+  - Updated the Freighter wrapper in `useWallet.ts` and `buildBurnerSignFn` in `stellar.ts` to return `{ signedTxXdr }`.
+- **`App.tsx`**: Replaced the non-existent `connectWallet()` call with role-aware dispatch — organizer/scanner views call `connectOrganizer()`, all other views call `connectAttendee()`.
+- **RPC topic filter fix** (`src/hooks/useEvents.ts`, `src/hooks/useTickets.ts`):
+  - `SorobanRpc.getEvents` `topics` array expects Base64-encoded XDR strings, not raw `ScVal` objects. Fixed by calling `.toXDR('base64')` on `xdr.ScVal.scvSymbol(...)` before passing it as a filter.
+
+### Test Results
+- `npm run build` — ✓ 115 modules, 0 errors (warnings only: chunk size, vite-plugin-node-polyfills esbuild/oxc deprecation — both non-blocking).
+- `npm run dev` — server starts on http://localhost:5175/.
+
+### What's next
+- End-to-end Testnet smoke test: create event (Freighter) → purchase ticket (Burner) → QR scan → `mark_used` on-chain.
+- Monitor Friendbot rate limits on testnet for burner wallet funding.
+- MVP deployment to production (Vercel or similar static host).

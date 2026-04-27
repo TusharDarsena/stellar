@@ -7,7 +7,7 @@ export type AppView = 'landing' | 'browse' | 'event-detail' | 'purchase' | 'my-t
 // Abstraction so soroban.ts doesn't care whether the user is on Freighter or Burner. (D-007 revised)
 // Freighter: wraps signTransaction from @stellar/freighter-api
 // Burner:    wraps Keypair.fromSecret(secret).sign(...)
-export type SignFn = (xdr: string, opts: { networkPassphrase: string }) => Promise<string>;
+export type SignFn = (xdr: string, opts?: { networkPassphrase?: string; address?: string }) => Promise<{ signedTxXdr: string; signerAddress?: string }>;
 
 export interface Event {
   eventId: string;

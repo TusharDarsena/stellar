@@ -22,14 +22,18 @@ function App() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   
   const { txState, wallet } = useAppStore();
-  const { connectWallet } = useWallet();
+  const { connectOrganizer, connectAttendee } = useWallet();
 
   const handleSelectRole = (view: AppView) => {
     setCurrentView(view);
   };
 
   const handleConnectWallet = async () => {
-    await connectWallet();
+    if (currentView.startsWith('organizer') || currentView === 'scanner') {
+      await connectOrganizer();
+    } else {
+      await connectAttendee();
+    }
   };
 
   const handleEventClick = (eventId: string) => {

@@ -39,10 +39,11 @@ export function useWallet() {
       const publicKey = accessResult.address;
 
       // Build signFn wrapping Freighter's signTransaction
-      const signFn: SignFn = async (xdr, { networkPassphrase }) => {
-        const result = await freighterSignTransaction(xdr, { networkPassphrase });
+      const signFn: SignFn = async (xdr, opts) => {
+        const passphrase = opts?.networkPassphrase || "Test SDF Network ; September 2015";
+        const result = await freighterSignTransaction(xdr, { networkPassphrase: passphrase });
         if (result.error) throw new Error(result.error);
-        return result.signedTxXdr;
+        return { signedTxXdr: result.signedTxXdr };
       };
 
       const xlmBalance = await fetchXlmBalance(publicKey);

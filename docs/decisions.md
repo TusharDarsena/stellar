@@ -172,3 +172,27 @@ This drains the (empty or minimal) escrow while the contract appears legitimate.
 **Mitigation for V2**: Require a minimum threshold of scanned tickets (e.g., at least 50% of capacity marked as `Used` via `mark_used`) before `release_funds` becomes callable. This ensures real attendance before funds unlock.
 
 **Why not fixed for MVP**: Adding a scanned-ticket threshold requires tracking scanned count per event, additional storage writes on every `mark_used`, and a more complex release condition. The MVP prioritizes core functionality over this edge case.
+
+---
+
+## D-032 — Secondary Market / Resale UI Deferred to Post-MVP
+
+The `MarketplaceContract` is deployed and fully functional (listing, buying, royalty deduction, cancellation). However, **no frontend UI will be built for resale flows in the MVP**.
+
+**Reason**: The attendee flow (buy → QR → scan) and organizer flow (create event → dashboard → release funds) are the minimum viable product. Resale is an enhancement. Building a marketplace UI before the core flows are tested end-to-end would add scope without adding demo value.
+
+**Affected pages not built**: `ListTicketPage`, `ResaleMarketPage`, `BuyResalePage`. These are V2.
+
+**Contract functions affected (not exposed in frontend)**: `create_listing`, `buy_listing`, `cancel_listing` in `MarketplaceContract`.
+
+---
+
+## D-033 — Event Cancellation and Refund UI Deferred to Post-MVP
+
+The `TicketContract` has `cancel_event()` (organizer-only) and `refund()` (attendee pull-based, D-002). **No frontend UI is built for either in the MVP.**
+
+**Reason**: Cancellation is an edge case — the MVP demo assumes events proceed normally. Building a cancel + refund flow before the happy path works end-to-end is premature.
+
+**Rule**: Organizers cannot cancel events from the dashboard in MVP. Attendees cannot self-serve refunds. These are V2 features.
+
+**Contract functions affected (not exposed in frontend)**: `cancel_event`, `refund` in `TicketContract`.

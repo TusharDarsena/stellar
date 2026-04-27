@@ -1,0 +1,43 @@
+
+### 1. The Zustand Store Hallucination (Phase 1/Scope)
+* **The Plan Says:** For `EventDetailPage`, the fix is to "Retrieve event from Zustand global store / custom hook cache".
+* **The Code Reality:** According to `D-025` in your `decisions.md` and the implementation of `useAppStore.ts`, the Zustand global store **only** manages `wallet` and `txState`. It explicitly does not contain event data.
+* **The Error:** Directing developers to pull event data from the Zustand store will lead them to search for state that doesn't exist. `useEvents` manages its own 30s TTL cache. The plan must specify pulling from the `useEvents` cache directly, removing any mention of Zustand for event data.
+
+### 2. Direct Architectural Violation in Scanner (Phase 1/Scope)
+* **The Plan Says:** For `ScannerPage`, "Wire `html5-qrcode` & verify signature via `Keypair.verify()`".
+* **The Code Reality:** Your `AGENTS.md` Hard Rules explicitly state: *"All SDK calls go through `lib/soroban.ts` or `lib/stellar.ts` — components never import `@stellar/stellar-sdk`"*. Furthermore, `AGENTS.md` strictly assigns the responsibility of *"QR payload build + verify"* to `lib/qr.ts`. 
+* **The Error:** Telling the UI component (`ScannerPage`) to handle cryptographic verification using `Keypair.verify()` directly violates both the dependency rules and the file ownership matrix. `ScannerPage` must call a verification helper exported from `lib/qr.ts`.
+
+### 3. Prop Signature Mismatch Crash (`App.tsx` vs `PurchasePage`)
+* **The Plan Says:** `PurchasePage` currently "Receives mock event from `App.tsx`" and the fix is to "Fetch by `eventId` from store". 
+* **The Code Reality:** In `App.tsx`, the component is rendered as `<PurchasePage event={...} />`. 
+* **The Error:** If `PurchasePage` is refactored to fetch its own data using an ID, its TypeScript interface must change from expecting an `event` object to expecting an `eventId` string. Because the plan fails to instruct an update to the render block in `App.tsx`, the Vite compiler will throw a fatal `Type not assignable` error during `npm run build` because `App.tsx` will still be trying to pass the full object.
+
+4. Misdirected Hydration Focus (Missing Off-Chain Metadata in Phase 1A)
+The Plan Says: useEvents must hydrate the data to camelCase and cast BigInt values to prevent UI crashes in stroopsToXlm.
+
+The Code Reality: The conversion from Soroban's i128 (which arrives as a BigInt) to a JavaScript Number is already handled perfectly at the API boundary in src/lib/soroban.ts (e.g., Number(e.price_per_ticket)).
+
+The Error: The plan sends the developer on a wild goose chase to fix a BigInt bug in useEvents that doesn't actually exist. The real hydration gap is that the Soroban contract stores strictly on-chain data. EventCard.tsx expects off-chain fields like imageUrl, description, venue, and city. Passing the contract data straight to the UI without these will result in broken images and blank text fields.
+
+The Fix: Shift Phase 1A's focus away from redundant type-casting. Instead, explicitly instruct the developer to inject fallback UI metadata (e.g., a placeholder image URL and default "TBA" strings for venue and city) during the useEvents mapping phase so the UI renders correctly.
+Flaw 5 — connectWallet Does Not Exist (Build-Breaking Import)
+The Plan Says: Nothing — it doesn't touch App.tsx's wallet connection code.
+The Code Reality: App.tsx line 3899 calls const { connectWallet } = useWallet(), but useWallet exports three functions: connectOrganizer, connectAttendee, and disconnectWallet. There is no connectWallet. This is already broken before your plan starts. Because the plan's Phase 2D instructs you to edit App.tsx anyway (removing the mock event prop from the purchase render case), that's your mandatory opportunity to fix this. If the plan doesn't flag it, whoever executes Phase 2D will touch App.tsx, see connectWallet is undefined, and potentially leave it as-is assuming it's intentional. The fix is to replace it with a role-aware dispatch (e.g., call connectOrganizer or connectAttendee based on currentView). The plan must call this out explicitly.
+
+Flaw 6 — Phase 1B Is Solving a Problem That Is Already Solved
+The Plan Says: "useTickets must intercept the RPC event (topic[0]) to get ticket_id and map the status tag." It also says TicketCard.tsx needs updating to handle the tagged union object.
+The Code Reality: Looking at soroban.ts's getTicket() (lines 6660–6677), it already does status: t.status.tag as Ticket['status'], converting the tagged union to the plain string the Ticket interface expects. Similarly, useTickets.ts already extracts ticket_id from event.topic[1] (line 6053). The Ticket type in types/index.ts defines status as 'Active' | 'Used' | 'Refunded' — a plain string union. TicketCard receives that already-resolved string. There is no tagged union leak into the UI layer, and no TicketCard fix needed. Phase 1B as written directs effort at infrastructure that was already built correctly, wasting time and risking introducing regressions by "fixing" things that aren't broken.
+
+Flaw 7 — Phase 1A's BigInt Fix Is Also Already Done in soroban.ts
+The Plan Says: Phase 1A instructs useEvents to cast BigInt fields during hydration to prevent stroopsToXlm from crashing.
+The Code Reality: soroban.ts's getEvent() already performs pricePerTicket: Number(e.price_per_ticket) at line 6647. The conversion from BigInt to Number happens at the soroban layer before data ever reaches useEvents. The stroopsToXlm function receives a number, not a BigInt. Phase 1A as written will send the implementer hunting for a BigInt conversion bug in useEvents that doesn't exist. The actual hydration gap is different: getEvent returns no imageUrl, description, venue, or city (these are off-chain fields with no contract storage). Phase 1A should be rewritten to describe inserting that fallback metadata, not a BigInt cast.
+
+Flaw 8 — stroopsToXlm Type Signature Is Incompatible With Its Own Event Interface
+The Plan Says: Nothing. Neither Phase 1A nor the scope table flags this.
+The Code Reality: types/index.ts declares pricePerTicket: number on the Event interface, and stroopsToXlm is typed as (s: number) => string. So far so good. But PurchasePage calls parseFloat(stroopsToXlm(event.pricePerTicket)) — fine. The silent risk is that once getEvent is live, e.price_per_ticket from the contract bindings is actually a BigInt (Soroban i128 → JS BigInt). Number(BigInt) works without loss only for values under Number.MAX_SAFE_INTEGER (≈9 quadrillion). A ticket priced at more than ~922,337 XLM would silently lose precision. For an MVP this is acceptable, but the plan's Phase 1A should note this explicitly and recommend capping input validation in CreateEventPage accordingly, rather than leaving a silent footgun.
+
+Flaw 9 — PurchasePage.handlePurchaseComplete Callback Signature Mismatch
+The Plan Says: Phase 2D should remove event prop drilling from App.tsx and make PurchasePage fetch its own data.
+The Code Reality: Look at App.tsx's handler: handlePurchaseComplete(eventId: string, txHash: string) navigates to 'my-tickets'. But PurchasePage calls onPurchaseComplete(event.eventId, ticketId) — it passes ticketId as the second argument, not a txHash. The prop is labelled onPurchaseComplete: (eventId: string, ticketId: string) in PurchasePage's interface but App.tsx's handler is annotated txHash: string. After Phase 2D refactors PurchasePage to fetch its own event, the eventId in the callback becomes redundant (it can get it internally), so the callback signature should change to just onPurchaseComplete(ticketId: string). The plan doesn't mention updating App.tsx's handler signature to match, which will produce a TypeScript error or — worse — silently pass the wrong value if strict mode is loose.

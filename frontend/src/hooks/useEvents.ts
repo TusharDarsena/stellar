@@ -46,7 +46,7 @@ export function useEvents(): {
           contractIds: [TICKET_CONTRACT_ID],
           topics: [
             // topic[0] must match "ev_create" symbol
-            [xdr.ScVal.scvSymbol('ev_create')],
+            [xdr.ScVal.scvSymbol('ev_create').toXDR('base64')],
           ],
         }],
       });

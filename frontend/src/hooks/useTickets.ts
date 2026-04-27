@@ -43,7 +43,7 @@ export function useTickets(): {
           type: 'contract',
           contractIds: [TICKET_CONTRACT_ID],
           topics: [
-            [xdr.ScVal.scvSymbol('tk_buy')],
+            [xdr.ScVal.scvSymbol('tk_buy').toXDR('base64')],
           ],
         }],
       });
