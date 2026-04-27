@@ -14,7 +14,7 @@ interface CreateEventFormData {
 
 interface CreateEventPageProps {
   readonly onBack: () => void;
-  readonly onSubmit: (data: CreateEventFormData) => void;
+  readonly onSubmit: () => void;
 }
 
 const EMPTY_FORM: CreateEventFormData = {
@@ -29,6 +29,9 @@ const EMPTY_FORM: CreateEventFormData = {
   description: '',
 };
 
+import { useAppStore } from '../../store/useAppStore';
+import { createEvent } from '../../lib/soroban';
+
 export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
   const [form, setForm] = useState<CreateEventFormData>(EMPTY_FORM);
 
@@ -36,9 +39,44 @@ export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { wallet, setTxState } = useAppStore();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    if (!wallet.isConnected || !wallet.publicKey) {
+      alert('Please connect your wallet first.');
+      return;
+    }
+
+    setTxState({ status: 'building' });
+    try {
+      // 1. Convert Date & Time to Unix timestamp
+      const dateTimeStr = `${form.date}T${form.time}:00`;
+      const dateUnix = Math.floor(new Date(dateTimeStr).getTime() / 1000);
+
+      // 2. Convert XLM to stroops (1 XLM = 10_000_000 stroops)
+      const priceStroops = Math.floor(parseFloat(form.priceXlm) * 10_000_000);
+
+      const capacity = parseInt(form.capacity, 10);
+
+      const txHash = await createEvent({
+        organizer: wallet.publicKey,
+        name: form.name,
+        dateUnix,
+        capacity,
+        priceStroops
+      });
+
+      setTxState({ status: 'success', hash: txHash });
+      setTimeout(() => {
+        setTxState({ status: 'idle' });
+        onSubmit();
+      }, 1500);
+
+    } catch (err: any) {
+      setTxState({ status: 'error', errorMessage: err.message || 'Failed to create event' });
+      setTimeout(() => setTxState({ status: 'idle' }), 3000);
+    }
   };
 
   const inputClass =

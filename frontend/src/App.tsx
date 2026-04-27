@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AppView, WalletState, TxState } from './types';
+import { AppView } from './types';
 import { LandingPage } from './pages/LandingPage';
 import { AppHeader } from './components/layout/AppHeader';
 import { BottomNav } from './components/layout/BottomNav';
@@ -12,32 +12,24 @@ import { ScannerPage } from './pages/ScannerPage';
 import { DashboardPage } from './pages/organizer/DashboardPage';
 import { CreateEventPage } from './pages/organizer/CreateEventPage';
 import { TxOverlay } from './components/ui/TxOverlay';
+import { useAppStore } from './store/useAppStore';
+import { useWallet } from './hooks/useWallet';
+import { MOCK_EVENTS } from './data/mockData';
 
 function App() {
   const [currentView, setCurrentView] = useState<AppView>('landing');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  const [txState, setTxState] = useState<TxState>({ status: 'idle' });
   
-  // Mock state for now
-  const [wallet, setWallet] = useState<WalletState>({
-    isConnected: false,
-    publicKey: null,
-    walletType: null,
-    xlmBalance: null
-  });
+  const { txState, wallet } = useAppStore();
+  const { connectWallet } = useWallet();
 
   const handleSelectRole = (view: AppView) => {
     setCurrentView(view);
   };
 
-  const handleConnectWallet = () => {
-    setWallet({
-      isConnected: true,
-      publicKey: 'GD3...4L2P',
-      walletType: 'freighter',
-      xlmBalance: '150.50'
-    });
+  const handleConnectWallet = async () => {
+    await connectWallet();
   };
 
   const handleEventClick = (eventId: string) => {
@@ -81,10 +73,9 @@ function App() {
       case 'purchase':
         return selectedEventId ? (
           <PurchasePage 
-            eventId={selectedEventId} 
+            event={MOCK_EVENTS.find(e => e.eventId === selectedEventId) || MOCK_EVENTS[0]} 
             onBack={() => setCurrentView('event-detail')}
             onPurchaseComplete={handlePurchaseComplete}
-            setTxState={setTxState}
           />
         ) : (
           <BrowsePage onEventClick={handleEventClick} />
@@ -118,11 +109,7 @@ function App() {
         return (
           <CreateEventPage
             onBack={() => setCurrentView('organizer-dashboard')}
-            onSubmit={(data) => {
-              // TODO: wire to Soroban create_event call
-              console.log('Create event:', data);
-              setCurrentView('organizer-dashboard');
-            }}
+            onSubmit={() => setCurrentView('organizer-dashboard')}
           />
         );
       default:

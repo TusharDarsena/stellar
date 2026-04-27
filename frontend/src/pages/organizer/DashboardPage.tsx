@@ -7,61 +7,7 @@ interface DashboardPageProps {
   readonly onScanTickets: () => void;
 }
 
-// ── Mock data from Stitch design ──────────────────────────────────────────────
-const MOCK_EVENTS: Event[] = [
-  {
-    eventId: 'evt_org_1',
-    organizer: 'G...ORG',
-    name: 'Nebula Nights: Summer Gala',
-    dateUnix: 1692057600,
-    capacity: 500,
-    pricePerTicket: 1500000000,
-    currentSupply: 500,
-    status: 'Completed',
-    imageUrl: 'https://images.unsplash.com/photo-1540039155732-d67414006c3a?w=400&q=80',
-    venue: 'The Void Arena',
-    city: 'New York',
-  },
-  {
-    eventId: 'evt_org_2',
-    organizer: 'G...ORG',
-    name: 'Stellar DevCon 2024',
-    dateUnix: 1729641600,
-    capacity: 1500,
-    pricePerTicket: 500000000,
-    currentSupply: 748,
-    status: 'Active',
-    imageUrl: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=400&q=80',
-    venue: 'Silicon Plaza',
-    city: 'San Francisco',
-  },
-  {
-    eventId: 'evt_org_3',
-    organizer: 'G...ORG',
-    name: 'NFT Art Expo',
-    dateUnix: 1720137600,
-    capacity: 300,
-    pricePerTicket: 800000000,
-    currentSupply: 120,
-    status: 'Active',
-    imageUrl: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=400&q=80',
-    venue: 'Metropolis Gallery',
-    city: 'Los Angeles',
-  },
-];
-
-interface EventMeta {
-  ticketsSold: number;
-  escrowXlm: number;
-  canRelease: boolean;
-  lockedUntilLabel?: string;
-}
-
-const EVENT_META: Record<string, EventMeta> = {
-  evt_org_1: { ticketsSold: 500, escrowXlm: 15000, canRelease: true },
-  evt_org_2: { ticketsSold: 748, escrowXlm: 30200, canRelease: false, lockedUntilLabel: 'Locked Until Oct 23' },
-  evt_org_3: { ticketsSold: 120, escrowXlm: 4800, canRelease: false, lockedUntilLabel: 'Locked Until July 6' },
-};
+import { MOCK_EVENTS } from '../../data/mockData';
 
 const TX_HISTORY = [
   { hash: 'GBD2...7K3P', label: 'Escrow Deposit - Nebula Nights', amount: '+250.00 XLM', positive: true },
@@ -70,9 +16,12 @@ const TX_HISTORY = [
 ];
 
 export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPageProps) {
-  const totalEvents = MOCK_EVENTS.length;
-  const totalTicketsSold = Object.values(EVENT_META).reduce((s, m) => s + m.ticketsSold, 0);
-  const totalEscrow = Object.values(EVENT_META).reduce((s, m) => s + m.escrowXlm, 0);
+  // Only show organizer events for the dashboard
+  const organizerEvents = MOCK_EVENTS.filter(e => e.eventId.startsWith('evt_org_'));
+  
+  const totalEvents = organizerEvents.length;
+  const totalTicketsSold = organizerEvents.reduce((s, event) => s + event.currentSupply, 0);
+  const totalEscrow = organizerEvents.reduce((s, event) => s + (event.currentSupply * (event.pricePerTicket / 10_000_000)), 0);
 
   const handleRelease = (eventId: string) => {
     // TODO: wire to Soroban release_funds call
@@ -193,16 +142,20 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
             </div>
           </div>
 
-          {MOCK_EVENTS.map((event) => {
-            const meta = EVENT_META[event.eventId];
+          {organizerEvents.map((event) => {
+            const ticketsSold = event.currentSupply;
+            const escrowXlm = ticketsSold * (event.pricePerTicket / 10_000_000);
+            const canRelease = event.status === 'Completed';
+            const lockedUntilLabel = canRelease ? undefined : `Locked Until ${new Date(event.dateUnix * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            
             return (
               <OrganizerEventRow
                 key={event.eventId}
                 event={event}
-                ticketsSold={meta.ticketsSold}
-                escrowXlm={meta.escrowXlm}
-                canRelease={meta.canRelease}
-                lockedUntilLabel={meta.lockedUntilLabel}
+                ticketsSold={ticketsSold}
+                escrowXlm={escrowXlm}
+                canRelease={canRelease}
+                lockedUntilLabel={lockedUntilLabel}
                 onRelease={handleRelease}
               />
             );

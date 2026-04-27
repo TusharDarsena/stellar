@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@stellar/freighter-api": "^6.0.1",
+    "@stellar/stellar-sdk": "^15.0.1",
     "@tailwindcss/vite": "^4.2.4",
     "clsx": "^2.1.1",
     "lucide-react": "^1.11.0",
@@ -19,7 +21,8 @@
     "react-dom": "^19.2.5",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.0.0",
-    "ticket": "file:src/contracts/ticket"
+    "ticket": "file:src/contracts/ticket",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

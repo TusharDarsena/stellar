@@ -1,11 +1,32 @@
 import React, { useState } from 'react';
 
+import { useAppStore } from '../store/useAppStore';
+import { MOCK_EVENTS, MOCK_TICKETS } from '../data/mockData';
+
 interface ScannerPageProps {
   onBack: () => void;
 }
 
 export function ScannerPage({ onBack }: ScannerPageProps) {
   const [scanResult, setScanResult] = useState<'idle' | 'success' | 'error'>('idle');
+  const { wallet } = useAppStore();
+
+  const handleScan = (data: string) => {
+    // Expected format: {wallet_address}:{ticket_id}:{timestamp}
+    const [address, ticketId, timestamp] = data.split(':');
+    
+    if (!address || !ticketId || !timestamp) {
+      setScanResult('error');
+      return;
+    }
+
+    const ticket = MOCK_TICKETS.find(t => t.ticketId === ticketId);
+    if (ticket && !ticket.isUsed) {
+      setScanResult('success');
+    } else {
+      setScanResult('error');
+    }
+  };
 
   return (
     <div className="bg-black text-[#e6e0ee] font-sans overflow-hidden h-screen flex flex-col">
@@ -23,9 +44,18 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-3 py-1 bg-[#36333e] rounded-full border border-[#484555]">
             <span className="material-symbols-outlined text-[#7C5CFF] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>circle</span>
-            <span className="text-xs font-semibold">LIVE SESSION</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              {wallet.isConnected ? 'Live Session' : 'Offline'}
+            </span>
           </div>
-          <span className="material-symbols-outlined text-[#e6e0ee]/60">account_circle</span>
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#e6e0ee]/60">account_circle</span>
+            {wallet.isConnected && (
+              <span className="text-[10px] font-mono text-[#7C5CFF]">
+                {wallet.publicKey?.substring(0, 4)}...{wallet.publicKey?.substring(wallet.publicKey.length - 4)}
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
@@ -69,13 +99,16 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
             </button>
             <div className="flex items-center gap-3 p-2 bg-[#36333e]/60 backdrop-blur-sm rounded-lg border border-[#484555]">
               <button 
-                onClick={() => setScanResult('success')}
+                onClick={() => {
+                  const firstTicket = MOCK_TICKETS[0];
+                  handleScan(`${wallet.publicKey || 'GD3...4L2P'}:${firstTicket.ticketId}:${Math.floor(Date.now()/1000)}`);
+                }}
                 className="px-4 py-2 bg-emerald-500/20 text-emerald-400 font-bold text-[10px] rounded border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors uppercase tracking-widest"
               >
                 Mock Valid
               </button>
               <button 
-                onClick={() => setScanResult('error')}
+                onClick={() => handleScan('invalid:data:0')}
                 className="px-4 py-2 bg-red-500/20 text-red-400 font-bold text-[10px] rounded border border-red-500/30 hover:bg-red-500/30 transition-colors uppercase tracking-widest"
               >
                 Mock Error

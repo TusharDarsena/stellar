@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useAppStore } from '../store/useAppStore';
 
 interface QRDisplayPageProps {
   ticketId: string;
@@ -7,11 +8,19 @@ interface QRDisplayPageProps {
 }
 
 export function QRDisplayPage({ ticketId, onBack }: QRDisplayPageProps) {
-  const [countdown, setCountdown] = useState(24);
+  const [countdown, setCountdown] = useState(30);
+  const [timestamp, setTimestamp] = useState(Math.floor(Date.now() / 1000));
+  const { wallet } = useAppStore();
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 30));
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          setTimestamp(Math.floor(Date.now() / 1000));
+          return 30;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -39,7 +48,7 @@ export function QRDisplayPage({ ticketId, onBack }: QRDisplayPageProps) {
           <div className="w-full aspect-square bg-white rounded-xl flex items-center justify-center p-8 mb-10 border border-[#7C5CFF]/20 shadow-[0_0_40px_rgba(124,92,255,0.15)]">
             <div className="relative w-full h-full">
               <QRCodeSVG
-                value={`${ticketId}-${countdown}`}
+                value={`${wallet.publicKey || 'unknown'}:${ticketId}:${timestamp}`}
                 size={256}
                 bgColor="#ffffff"
                 fgColor="#000000"
@@ -68,7 +77,7 @@ export function QRDisplayPage({ ticketId, onBack }: QRDisplayPageProps) {
           </span>
         </div>
         <div className="font-mono text-[10px] text-[#7C5CFF]/50 tracking-tighter bg-[#0f0d16]/50 px-4 py-1 rounded">
-          GDCX...W4KL
+          {wallet.isConnected && wallet.publicKey ? wallet.publicKey : 'Wallet Not Connected'}
         </div>
       </footer>
 

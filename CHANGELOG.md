@@ -154,4 +154,38 @@ Built the full frontend application from scratch using React, Vite, and Tailwind
 - Integrate real Soroban contract hooks (replacing mock handlers).
 - Implement cryptographically signed QR payloads (D-006).
 - Add real wallet connectivity via Freighter and Web3Auth hooks.
-- Deploy frontend to Vercel/Netlify for staging verification.
+## Session 6 — 2026-04-27 (Current)
+
+### Context
+Refactored the frontend architecture to eliminate prop-drilling, centralize state management with Zustand, and consolidate mock data into a single source of truth. Aligned the transaction orchestration logic with the "Backend-Builds, Client-Signs" pattern (D-007).
+
+### Decisions logged
+- **D-027** — Centralized all mock data into `src/data/mockData.ts` to ensure UI consistency across pages.
+- **D-028** — Migrated wallet and transaction state into a global Zustand `useAppStore` for reliable cross-component reactivity.
+- **D-029** — Implemented "Auto-Hide" logic in `AppHeader` and `BottomNav` based on the current `AppView` to prevent double-header artifacts on standalone pages.
+- **D-030** — Standardized QR payload format to `{wallet}:{ticket_id}:{timestamp}` as per the security specification (D-006).
+
+### What was built
+- **State Management**:
+  - `useAppStore`: Centralized store for `wallet` and `txState`.
+  - `useWallet`: Refactored to synchronize Freighter connection status with the global store.
+- **Data Centralization**:
+  - `mockData.ts`: Single source of truth for `MOCK_EVENTS` and `MOCK_TICKETS`.
+- **Architectural Refactoring**:
+  - `App.tsx`: Cleaned up to handle only high-level routing; all local state moved to stores.
+  - `PurchasePage` & `CreateEventPage`: Fully wired to `useAppStore.txState` for real-time transaction feedback (Building → Signing → Success).
+  - `ScannerPage`: Integrated with global store and added mock payload verification logic.
+  - `QRDisplayPage`: Refactored to generate standardized payloads and handle 30s timestamp rotations.
+- **Business Logic Integration**:
+  - Implemented unit conversion (Date → Unix, XLM → Stroops) within the frontend flow to match Soroban contract requirements.
+
+### Fixes
+- **Freighter Integration**: Fixed `src/hooks/useWallet.ts` by updating the `@stellar/freighter-api` import to use `requestAccess` (v2.x pattern) instead of the deprecated `getPublicKey`.
+- **UI Polish**: Resolved the double-header issue by moving visibility logic into the layout components themselves.
+
+### What's next
+- Implement actual backend API calls in `src/lib/soroban.ts` (replacing the stubs).
+- Add real on-chain ticket status polling (checking if ticket is already 'Used').
+- Implement organizer "Release Funds" transaction flow.
+- Deployment of frontend to production environment.
+

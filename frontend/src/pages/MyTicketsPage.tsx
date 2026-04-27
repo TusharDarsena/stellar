@@ -2,52 +2,7 @@ import React, { useState } from 'react';
 import { Ticket, Event } from '../types';
 import { TicketCard } from '../components/tickets/TicketCard';
 
-// Mocks
-const MOCK_EVENTS: Record<string, Event> = {
-  'evt_1': {
-    eventId: 'evt_1',
-    organizer: 'org_1',
-    name: 'Neon Genesis Music Festival 2024',
-    dateUnix: 1729800000,
-    capacity: 1000,
-    pricePerTicket: 1250000000,
-    currentSupply: 500,
-    status: 'Active',
-    venue: 'The Cyber Vault',
-    city: 'Shibuya',
-    imageUrl: 'https://images.unsplash.com/photo-1540039155732-d67414006c3a?w=800&q=80'
-  },
-  'evt_2': {
-    eventId: 'evt_2',
-    organizer: 'org_2',
-    name: 'BLOCKCHAIN SUMMIT',
-    dateUnix: 1736067600,
-    capacity: 5000,
-    pricePerTicket: 0,
-    currentSupply: 5000,
-    status: 'Active',
-    venue: 'Web3 Convention Center',
-    city: 'Miami',
-    imageUrl: 'https://images.unsplash.com/photo-1516245834210-c4c142787335?w=800&q=80'
-  }
-};
-
-const MOCK_TICKETS: Ticket[] = [
-  {
-    ticketId: 'xlr_8293_stellar_9021_f92_vlt',
-    eventId: 'evt_1',
-    owner: 'G...3k9P',
-    isUsed: false,
-    purchaseTimestamp: 1720000000
-  },
-  {
-    ticketId: 'st_9942_vault_1102_a33_chain',
-    eventId: 'evt_2',
-    owner: 'G...3k9P',
-    isUsed: false,
-    purchaseTimestamp: 1720000000
-  }
-];
+import { MOCK_EVENTS, MOCK_TICKETS } from '../data/mockData';
 
 interface MyTicketsPageProps {
   onShowQR: (ticketId: string) => void;
@@ -88,7 +43,7 @@ export function MyTicketsPage({ onShowQR, onBrowseMore }: MyTicketsPageProps) {
             <TicketCard 
               key={ticket.ticketId} 
               ticket={ticket} 
-              event={MOCK_EVENTS[ticket.eventId]} 
+              event={MOCK_EVENTS.find(e => e.eventId === ticket.eventId)!}
               onShowQR={onShowQR} 
             />
           ))}

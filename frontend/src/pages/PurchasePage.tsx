@@ -3,30 +3,17 @@ import { Event, stroopsToXlm, TxState } from '../types';
 import { Button } from '../components/ui/Button';
 
 interface PurchasePageProps {
-  eventId: string;
+  event: Event;
   onBack: () => void;
   onPurchaseComplete: (eventId: string, txHash: string) => void;
-  setTxState: (state: TxState) => void;
 }
 
-// Mock event for display
-const MOCK_EVENT: Event = {
-  eventId: 'evt_1',
-  organizer: 'org_1',
-  name: 'Neon Genesis Music Festival 2024',
-  dateUnix: 1729800000,
-  capacity: 1000,
-  pricePerTicket: 1250000000, // 125 XLM
-  currentSupply: 500,
-  status: 'Active',
-  venue: 'Crypto Arena',
-  city: 'Los Angeles',
-  imageUrl: 'https://images.unsplash.com/photo-1540039155732-d67414006c3a?w=800&q=80'
-};
+import { useAppStore } from '../store/useAppStore';
+import { purchaseTicket } from '../lib/soroban';
 
-export function PurchasePage({ eventId, onBack, onPurchaseComplete, setTxState }: PurchasePageProps) {
+export function PurchasePage({ event, onBack, onPurchaseComplete }: PurchasePageProps) {
   const [quantity, setQuantity] = useState(1);
-  const event = MOCK_EVENT; // In real app, fetch based on eventId
+  const { wallet, setTxState } = useAppStore();
   const priceXlm = parseFloat(stroopsToXlm(event.pricePerTicket));
   const totalPrice = priceXlm * quantity;
 
@@ -39,21 +26,22 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete, setTxState }
   };
 
   const handlePurchase = async () => {
-    // Mock purchase flow
+    if (!wallet.isConnected || !wallet.publicKey) return;
+    
     setTxState({ status: 'building' });
-    
-    await new Promise(r => setTimeout(r, 1000));
-    setTxState({ status: 'signing' });
-    
-    await new Promise(r => setTimeout(r, 1500));
-    setTxState({ status: 'submitting', hash: '5f3a...9d2b' });
-    
-    await new Promise(r => setTimeout(r, 2000));
-    setTxState({ status: 'success', hash: '5f3a...9d2b' });
-    
-    await new Promise(r => setTimeout(r, 1500));
-    setTxState({ status: 'idle' });
-    onPurchaseComplete(eventId, '5f3a...9d2b');
+    try {
+      const txHash = await purchaseTicket(event.eventId, wallet.publicKey);
+      setTxState({ status: 'success', hash: txHash });
+      
+      // Wait for success animation before navigating
+      setTimeout(() => {
+        setTxState({ status: 'idle' });
+        onPurchaseComplete(event.eventId, txHash);
+      }, 1500);
+    } catch (err: any) {
+      setTxState({ status: 'error', errorMessage: err.message || 'Purchase failed' });
+      setTimeout(() => setTxState({ status: 'idle' }), 3000);
+    }
   };
 
   return (
@@ -71,7 +59,9 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete, setTxState }
             <span className="material-symbols-outlined text-slate-400">notifications</span>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[#272C33] rounded-full border border-[#7C5CFF]/30">
               <span className="material-symbols-outlined text-[#7C5CFF] text-sm">account_balance_wallet</span>
-              <span className="font-mono text-xs text-slate-50">G...3k9P</span>
+              <span className="font-mono text-xs text-slate-50">
+                {wallet.isConnected ? `${wallet.publicKey?.substring(0, 4)}...${wallet.publicKey?.substring(wallet.publicKey.length - 4)}` : 'Disconnected'}
+              </span>
             </div>
           </div>
         </div>
@@ -171,8 +161,13 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete, setTxState }
 
         {/* Actions */}
         <div className="flex flex-col gap-4">
-          <Button onClick={handlePurchase} size="lg" className="w-full py-4 text-lg">
-            Continue to Payment
+          <Button 
+            onClick={handlePurchase} 
+            size="lg" 
+            className="w-full py-4 text-lg"
+            disabled={!wallet.isConnected}
+          >
+            {wallet.isConnected ? 'Continue to Payment' : 'Connect Wallet to continue'}
           </Button>
           <Button variant="secondary" onClick={onBack} size="lg" className="w-full py-4 text-lg">
             Cancel

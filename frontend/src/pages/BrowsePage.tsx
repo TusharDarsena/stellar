@@ -2,61 +2,7 @@ import React, { useState } from 'react';
 import { Event } from '../types';
 import { EventCard } from '../components/events/EventCard';
 
-// Mock data matching the Stitch design
-const MOCK_EVENTS: Event[] = [
-  {
-    eventId: 'evt_1',
-    organizer: 'org_1',
-    name: 'Neon Velocity World Tour',
-    dateUnix: 1729800000, // Oct 24, 2024
-    capacity: 500,
-    pricePerTicket: 450000000, // 45 XLM
-    currentSupply: 488,
-    status: 'Active',
-    venue: 'Crystal Arena',
-    city: 'Tokyo',
-    imageUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80'
-  },
-  {
-    eventId: 'evt_2',
-    organizer: 'org_2',
-    name: 'Global Champions League',
-    dateUnix: 1731425400, // Nov 12, 2024
-    capacity: 10000,
-    pricePerTicket: 1200000000, // 120 XLM
-    currentSupply: 10000, // Waitlist (Sold out)
-    status: 'Active',
-    venue: 'Metropolis Stadium',
-    city: 'London',
-    imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80'
-  },
-  {
-    eventId: 'evt_3',
-    organizer: 'org_3',
-    name: 'Elysium: The Opera',
-    dateUnix: 1733425200, // Dec 05, 2024
-    capacity: 1200,
-    pricePerTicket: 855000000, // 85.50 XLM
-    currentSupply: 1158,
-    status: 'Active',
-    venue: 'Royal Hall',
-    city: 'Paris',
-    imageUrl: 'https://images.unsplash.com/photo-1507676184212-d0330a156f95?w=800&q=80'
-  },
-  {
-    eventId: 'evt_4',
-    organizer: 'org_4',
-    name: 'Stellar Arts Festival',
-    dateUnix: 1755248400, // Aug 15, 2025
-    capacity: 5000,
-    pricePerTicket: 250000000, // 25 XLM
-    currentSupply: 4000,
-    status: 'Active',
-    venue: 'Bay Area Park',
-    city: 'San Francisco',
-    imageUrl: 'https://images.unsplash.com/photo-1533174000255-b0728c03c5b5?w=800&q=80'
-  }
-];
+import { MOCK_EVENTS } from '../data/mockData';
 
 const CATEGORIES = ['All', 'Music', 'Sports', 'Theater', 'Comedy', 'Festivals'];
 

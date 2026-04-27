@@ -9,8 +9,8 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ currentView, wallet, onNavigate, onConnectWallet }: AppHeaderProps) {
-  // Only show navigation links if not on landing page
-  if (currentView === 'landing') return null;
+  // Only show navigation links if on browse or my-tickets
+  if (currentView !== 'browse' && currentView !== 'my-tickets') return null;
 
   return (
     <header className="fixed top-0 w-full z-50 border-b border-outline-dim bg-surface-container/90 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">

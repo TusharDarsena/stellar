@@ -8,24 +8,11 @@ interface EventDetailPageProps {
   onPurchase: (eventId: string) => void;
 }
 
-// Hardcoded mock to match the design for now
-const MOCK_EVENT: Event = {
-  eventId: 'evt_3',
-  organizer: 'Stellar Events Group',
-  name: 'Galactic Neo-Jazz Festival',
-  dateUnix: 1726340400, // September 14, 2024
-  capacity: 500,
-  pricePerTicket: 1450000000, // 145 XLM
-  currentSupply: 88, // 412 left means 88 minted out of 500
-  status: 'Active',
-  venue: 'The Zenith Atrium',
-  city: 'Neo Tokyo',
-  imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&q=80',
-};
+import { MOCK_EVENTS } from '../data/mockData';
 
 export function EventDetailPage({ eventId, onBack, onPurchase }: EventDetailPageProps) {
   // In a real app, fetch event by eventId. For now, use mock.
-  const event = MOCK_EVENT;
+  const event = MOCK_EVENTS.find(e => e.eventId === eventId) || MOCK_EVENTS[0];
   const ticketsLeft = event.capacity - event.currentSupply;
   const soldPercentage = Math.round((event.currentSupply / event.capacity) * 100);
 

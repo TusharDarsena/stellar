@@ -7,7 +7,7 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ currentView, onNavigate }: BottomNavProps) {
-  if (currentView === 'landing') return null;
+  if (['landing', 'event-detail', 'purchase', 'qr-display', 'organizer-create'].includes(currentView)) return null;
 
   return (
     <nav className="md:hidden fixed bottom-0 w-full z-50 border-t border-outline-dim bg-surface-container shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
