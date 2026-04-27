@@ -5,17 +5,26 @@ import { useAppStore } from '../store/useAppStore';
 import { purchaseTicket } from '../lib/soroban';
 import { generateID } from '../lib/utils';
 
+import { useEvents } from '../hooks/useEvents';
+
 interface PurchasePageProps {
-  event: Event;
+  eventId: string;
   onBack: () => void;
-  onPurchaseComplete: (eventId: string, ticketId: string) => void;
+  onPurchaseComplete: (ticketId: string) => void;
 }
 
-export function PurchasePage({ event, onBack, onPurchaseComplete }: PurchasePageProps) {
+export function PurchasePage({ eventId, onBack, onPurchaseComplete }: PurchasePageProps) {
+  const { events, loading, error } = useEvents();
+  const event = events.find(e => e.eventId === eventId);
+
   const [quantity, setQuantity] = useState(1);
   const { wallet, setTxState } = useAppStore();
-  const priceXlm = parseFloat(stroopsToXlm(event.pricePerTicket));
+  const priceXlm = event ? parseFloat(stroopsToXlm(event.pricePerTicket)) : 0;
   const totalPrice = priceXlm * quantity;
+
+  if (loading) return <div className="p-20 text-center text-slate-400">Loading...</div>;
+  if (error) return <div className="p-20 text-center text-red-500">{error}</div>;
+  if (!event) return <div className="p-20 text-center text-slate-400">Event not found</div>;
 
   const handleIncrement = () => {
     if (quantity < 10) setQuantity(q => q + 1);
@@ -39,7 +48,7 @@ export function PurchasePage({ event, onBack, onPurchaseComplete }: PurchasePage
       // Wait for success animation before navigating
       setTimeout(() => {
         setTxState({ status: 'idle' });
-        onPurchaseComplete(event.eventId, ticketId);
+        onPurchaseComplete(ticketId);
       }, 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Purchase failed';

@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Event } from '../types';
 import { EventCard } from '../components/events/EventCard';
 
-import { MOCK_EVENTS } from '../data/mockData';
-
+import { useEvents } from '../hooks/useEvents';
 const CATEGORIES = ['All', 'Music', 'Sports', 'Theater', 'Comedy', 'Festivals'];
 
 interface BrowsePageProps {
@@ -12,6 +11,7 @@ interface BrowsePageProps {
 
 export function BrowsePage({ onEventClick }: BrowsePageProps) {
   const [activeCategory, setActiveCategory] = useState('All');
+  const { events, loading, error } = useEvents();
 
   return (
     <main className="pt-24 pb-20 max-w-7xl mx-auto px-4 md:px-8 min-h-screen">
@@ -41,15 +41,29 @@ export function BrowsePage({ onEventClick }: BrowsePageProps) {
       </div>
 
       {/* Event Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {MOCK_EVENTS.map(event => (
-          <EventCard 
-            key={event.eventId} 
-            event={event} 
-            onClick={onEventClick}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <div className="w-8 h-8 border-2 border-[#947dff] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-center">
+          {error}
+        </div>
+      ) : events.length === 0 ? (
+        <div className="text-center py-20 text-slate-400">
+          No events found. Be the first to create one!
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {events.map(event => (
+            <EventCard 
+              key={event.eventId} 
+              event={event} 
+              onClick={onEventClick}
+            />
+          ))}
+        </div>
+      )}
     </main>
   );
 }

@@ -71,7 +71,18 @@ export function useEvents(): {
       // Step 3: Fetch current on-chain state for each discovered event ID
       const settled = await Promise.allSettled(eventIds.map((id) => getEvent(id)));
       const resolved: Event[] = settled
-        .map((r) => (r.status === 'fulfilled' && r.value ? r.value : null))
+        .map((r) => {
+          if (r.status === 'fulfilled' && r.value) {
+            return {
+              ...r.value,
+              imageUrl: r.value.imageUrl || 'https://images.unsplash.com/photo-1540039155732-d67414073fb8?q=80&w=2667&auto=format&fit=crop',
+              description: r.value.description || 'Join us for an unforgettable event! Secure your tickets now.',
+              venue: r.value.venue || 'TBA Venue',
+              city: r.value.city || 'TBA City',
+            } as Event;
+          }
+          return null;
+        })
         .filter((e): e is Event => e !== null);
 
       if (fetchId !== fetchRef.current) return;

@@ -8,11 +8,15 @@ interface EventDetailPageProps {
   onPurchase: (eventId: string) => void;
 }
 
-import { MOCK_EVENTS } from '../data/mockData';
+import { useEvents } from '../hooks/useEvents';
 
 export function EventDetailPage({ eventId, onBack, onPurchase }: EventDetailPageProps) {
-  // In a real app, fetch event by eventId. For now, use mock.
-  const event = MOCK_EVENTS.find(e => e.eventId === eventId) || MOCK_EVENTS[0];
+  const { events, loading, error } = useEvents();
+  const event = events.find(e => e.eventId === eventId);
+
+  if (loading) return <div className="p-20 text-center text-slate-400">Loading event...</div>;
+  if (error) return <div className="p-20 text-center text-red-500">{error}</div>;
+  if (!event) return <div className="p-20 text-center text-slate-400">Event not found</div>;
   const ticketsLeft = event.capacity - event.currentSupply;
   const soldPercentage = Math.round((event.currentSupply / event.capacity) * 100);
 
@@ -118,11 +122,7 @@ export function EventDetailPage({ eventId, onBack, onPurchase }: EventDetailPage
 
             <section>
               <h3 className="text-2xl font-semibold text-[#e6e0ee] mb-4">About the Event</h3>
-              <div className="text-base text-[#c9c4d8] space-y-4 leading-relaxed">
-                <p>Experience the convergence of celestial rhythms and digital art. The Galactic Neo-Jazz Festival brings together the most innovative musicians from across the quadrant for a one-night-only immersive experience.</p>
-                <p>Each ticket is a unique NFT minted on the Stellar network, granting not only entry but also a permanent digital memento of the performance. VIP pass holders will receive exclusive access to the 'Orbital Lounge' and a limited edition generative art drop from the artist collective.</p>
-                <p>Doors open at 18:30 for the holographic pre-show. Zero-gravity cocktails and light-synth refreshments will be served throughout the evening.</p>
-              </div>
+                <p>{event.description}</p>
             </section>
           </div>
 

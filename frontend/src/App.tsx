@@ -14,7 +14,6 @@ import { CreateEventPage } from './pages/organizer/CreateEventPage';
 import { TxOverlay } from './components/ui/TxOverlay';
 import { useAppStore } from './store/useAppStore';
 import { useWallet } from './hooks/useWallet';
-import { MOCK_EVENTS } from './data/mockData';
 
 function App() {
   const [currentView, setCurrentView] = useState<AppView>('landing');
@@ -46,8 +45,8 @@ function App() {
     setCurrentView('purchase');
   };
 
-  const handlePurchaseComplete = (eventId: string, txHash: string) => {
-    console.log(`Purchased ${eventId} with tx ${txHash}`);
+  const handlePurchaseComplete = (ticketId: string) => {
+    console.log(`Purchased ticket ${ticketId}`);
     // Show success view or redirect to tickets
     setCurrentView('my-tickets');
   };
@@ -77,7 +76,7 @@ function App() {
       case 'purchase':
         return selectedEventId ? (
           <PurchasePage 
-            event={MOCK_EVENTS.find(e => e.eventId === selectedEventId) || MOCK_EVENTS[0]} 
+            eventId={selectedEventId} 
             onBack={() => setCurrentView('event-detail')}
             onPurchaseComplete={handlePurchaseComplete}
           />

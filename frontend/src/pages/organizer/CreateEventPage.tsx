@@ -56,8 +56,16 @@ export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
       const dateTimeStr = `${form.date}T${form.time}:00`;
       const dateUnix = Math.floor(new Date(dateTimeStr).getTime() / 1000);
 
+      // Prevent precision loss when converting i128 to Number in Soroban later
+      const price = parseFloat(form.priceXlm);
+      if (price > 900_000_000) {
+        alert('Price exceeds maximum safe limit for MVP precision.');
+        setTxState({ status: 'idle' });
+        return;
+      }
+
       // Convert XLM to stroops as bigint (D-007 revised — BigInt required by contract binding)
-      const priceStroops = xlmToStroops(parseFloat(form.priceXlm));
+      const priceStroops = xlmToStroops(price);
       const capacity = parseInt(form.capacity, 10);
 
       // eventId generated client-side — organizer controls the ID namespace (D-029)

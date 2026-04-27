@@ -7,25 +7,29 @@ interface DashboardPageProps {
   readonly onScanTickets: () => void;
 }
 
-import { MOCK_EVENTS } from '../../data/mockData';
-
-const TX_HISTORY = [
-  { hash: 'GBD2...7K3P', label: 'Escrow Deposit - Nebula Nights', amount: '+250.00 XLM', positive: true },
-  { hash: 'GDS9...2X8A', label: 'Escrow Deposit - DevCon 2024', amount: '+150.00 XLM', positive: true },
-  { hash: 'GAA1...9L0Z', label: 'Service Fee Payment', amount: '-15.00 XLM', positive: false },
-];
+import { useEvents } from '../../hooks/useEvents';
+import { useAppStore } from '../../store/useAppStore';
 
 export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPageProps) {
-  // Only show organizer events for the dashboard
-  const organizerEvents = MOCK_EVENTS.filter(e => e.eventId.startsWith('evt_org_'));
+  const { events } = useEvents();
+  const { wallet } = useAppStore();
+
+  const organizerEvents = wallet.publicKey 
+    ? events.filter(e => e.organizer === wallet.publicKey) 
+    : [];
   
   const totalEvents = organizerEvents.length;
   const totalTicketsSold = organizerEvents.reduce((s, event) => s + event.currentSupply, 0);
   const totalEscrow = organizerEvents.reduce((s, event) => s + (event.currentSupply * (event.pricePerTicket / 10_000_000)), 0);
 
-  const handleRelease = (eventId: string) => {
-    // TODO: wire to Soroban release_funds call
-    console.log(`Release funds for ${eventId}`);
+  const handleRelease = async (eventId: string) => {
+    if (!wallet.isConnected || !wallet.publicKey || !wallet.signFn) return;
+    try {
+      // TODO: wire to Soroban release_funds call in soroban.ts
+      console.log(`Release funds for ${eventId}`);
+    } catch (e) {
+      console.error('Release funds failed', e);
+    }
   };
 
   return (
@@ -169,34 +173,8 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
             <h2 className="text-2xl font-semibold text-[#e6e0ee]">Stellar Transaction History</h2>
           </div>
 
-          <div className="bg-[#15181C]/70 backdrop-blur-md border border-[#272C33] rounded-xl overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#15181C] border-b border-[#272C33]">
-                  {['Transaction Hash', 'Action', 'Amount'].map((h, i) => (
-                    <th
-                      key={h}
-                      className={`px-6 py-4 text-[10px] font-semibold text-[#c9c4d8] uppercase tracking-widest ${i === 2 ? 'text-right' : ''}`}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#272C33]">
-                {TX_HISTORY.map((tx) => (
-                  <tr key={tx.hash} className="hover:bg-[#272C33]/20 transition-colors">
-                    <td className="px-6 py-4 font-mono text-sm text-[#7C5CFF]">{tx.hash}</td>
-                    <td className="px-6 py-4 text-sm text-[#e6e0ee]">{tx.label}</td>
-                    <td
-                      className={`px-6 py-4 font-mono text-sm text-right ${tx.positive ? 'text-[#e6e0ee]' : 'text-[#ffb4ab]'}`}
-                    >
-                      {tx.amount}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-[#15181C]/70 backdrop-blur-md border border-[#272C33] rounded-xl p-8 text-center text-slate-400">
+            Transaction history coming soon
           </div>
         </section>
       </main>

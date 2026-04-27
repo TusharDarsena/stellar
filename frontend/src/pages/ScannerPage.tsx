@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { useAppStore } from '../store/useAppStore';
 import { verifyQRPayload } from '../lib/qr';
 import { getTicket, markUsed } from '../lib/soroban';
@@ -43,6 +44,34 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
     }
   };
 
+  useEffect(() => {
+    let html5QrCode: Html5Qrcode;
+    
+    // Slight delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      html5QrCode = new Html5Qrcode("qr-reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          handleScan(decodedText);
+        },
+        () => {
+          // ignore parse errors
+        }
+      ).catch(err => {
+        console.error("Failed to start scanner:", err);
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(console.error);
+      }
+    };
+  }, []);
+
   // Dev-only buttons — render behind import.meta.env.DEV guard so they tree-shake in prod.
   const DEV_MODE = import.meta.env.DEV;
 
@@ -79,10 +108,11 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
 
       {/* Main Viewport */}
       <main className="flex-grow relative flex flex-col overflow-hidden bg-black">
-        {/* Camera Viewport Simulation */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <div className="absolute inset-0 bg-neutral-900 opacity-40"></div>
-          {/* Central Focus Area */}
+        {/* Camera Viewport */}
+        <div className="absolute inset-0 z-0 overflow-hidden bg-neutral-900">
+          <div id="qr-reader" className="w-full h-full [&>video]:object-cover [&>video]:w-full [&>video]:h-full border-none"></div>
+          
+          {/* Central Focus Area Overlay */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative w-72 h-72 md:w-96 md:h-96">
               <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-[#7C5CFF]"></div>

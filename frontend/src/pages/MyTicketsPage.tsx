@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Ticket, Event } from '../types';
 import { TicketCard } from '../components/tickets/TicketCard';
 
-import { MOCK_EVENTS, MOCK_TICKETS } from '../data/mockData';
-
+import { useTickets } from '../hooks/useTickets';
+import { useEvents } from '../hooks/useEvents';
 interface MyTicketsPageProps {
   onShowQR: (ticketId: string) => void;
   onBrowseMore: () => void;
@@ -11,6 +11,10 @@ interface MyTicketsPageProps {
 
 export function MyTicketsPage({ onShowQR, onBrowseMore }: MyTicketsPageProps) {
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
+  const { tickets, loading: ticketsLoading, error } = useTickets();
+  const { events, loading: eventsLoading } = useEvents();
+
+  const loading = ticketsLoading || eventsLoading;
 
   return (
     <main className="pt-24 pb-32 px-4 md:px-8 max-w-7xl mx-auto min-h-screen">
@@ -39,14 +43,28 @@ export function MyTicketsPage({ onShowQR, onBrowseMore }: MyTicketsPageProps) {
       {/* Ticket Grid */}
       {activeTab === 'ACTIVE' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOCK_TICKETS.map(ticket => (
-            <TicketCard 
-              key={ticket.ticketId} 
-              ticket={ticket} 
-              event={MOCK_EVENTS.find(e => e.eventId === ticket.eventId)!}
-              onShowQR={onShowQR} 
-            />
-          ))}
+          {loading ? (
+            <div className="col-span-full flex justify-center py-20">
+              <div className="w-8 h-8 border-2 border-[#947dff] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : error ? (
+            <div className="col-span-full bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-center">
+              {error}
+            </div>
+          ) : (
+            tickets.map(ticket => {
+              const event = events.find(e => e.eventId === ticket.eventId);
+              if (!event) return null;
+              return (
+                <TicketCard 
+                  key={ticket.ticketId} 
+                  ticket={ticket} 
+                  event={event}
+                  onShowQR={onShowQR} 
+                />
+              );
+            })
+          )}
           
           {/* Empty State / Upcoming Placeholder */}
           <button 
