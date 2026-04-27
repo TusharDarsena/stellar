@@ -1,0 +1,328 @@
+import React, { useState } from 'react';
+
+interface CreateEventFormData {
+  name: string;
+  date: string;
+  time: string;
+  venue: string;
+  city: string;
+  capacity: string;
+  priceXlm: string;
+  imageUrl: string;
+  description: string;
+}
+
+interface CreateEventPageProps {
+  readonly onBack: () => void;
+  readonly onSubmit: (data: CreateEventFormData) => void;
+}
+
+const EMPTY_FORM: CreateEventFormData = {
+  name: '',
+  date: '',
+  time: '',
+  venue: '',
+  city: '',
+  capacity: '',
+  priceXlm: '',
+  imageUrl: '',
+  description: '',
+};
+
+export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
+  const [form, setForm] = useState<CreateEventFormData>(EMPTY_FORM);
+
+  const handleChange = (field: keyof CreateEventFormData) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(form);
+  };
+
+  const inputClass =
+    'w-full bg-[#15181C] border border-[#272C33] rounded-lg p-4 text-[#e6e0ee] placeholder-[#938ea1] focus:outline-none focus:border-[#7C5CFF] focus:ring-1 focus:ring-[#7C5CFF] transition-all';
+
+  const labelClass = 'block text-xs font-semibold text-[#c9c4d8] uppercase tracking-widest mb-2';
+
+  return (
+    <div className="bg-[#14121b] text-[#e6e0ee] min-h-screen">
+      {/* Top Navigation */}
+      <header className="flex justify-between items-center px-6 py-4 w-full sticky top-0 z-50 bg-[#15181C] border-b border-[#272C33]">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBack}
+            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#272C33]/50 transition-colors duration-200 text-[#EAEFF4]/60 hover:text-[#EAEFF4]"
+          >
+            <span className="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h1 className="text-xl font-bold tracking-tighter text-[#EAEFF4]">Create Event</h1>
+        </div>
+        <nav className="hidden md:flex items-center gap-8">
+          <button
+            onClick={onBack}
+            className="text-[#EAEFF4]/60 hover:text-[#EAEFF4] text-xs font-semibold tracking-wider transition-colors"
+          >
+            Dashboard
+          </button>
+          <span className="text-[#7C5CFF] border-b-2 border-[#7C5CFF] pb-1 text-xs font-semibold tracking-wider">
+            Events
+          </span>
+        </nav>
+        <div className="flex items-center gap-4">
+          <span className="material-symbols-outlined text-[#EAEFF4]/60 cursor-pointer hover:text-[#EAEFF4]">
+            notifications
+          </span>
+          <span className="material-symbols-outlined text-[#EAEFF4]/60 cursor-pointer hover:text-[#EAEFF4]">
+            account_circle
+          </span>
+        </div>
+      </header>
+
+      <main className="max-w-[1280px] mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+          {/* ── Form ── */}
+          <section className="lg:col-span-7 space-y-10">
+            <div>
+              <h2 className="text-3xl font-semibold text-[#e6e0ee] mb-2">Event Essentials</h2>
+              <p className="text-base text-[#c9c4d8]">
+                Provide the foundational details for your Stellar NFT-gated event.
+              </p>
+            </div>
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {/* Event Name */}
+              <div>
+                <label className={labelClass}>Event Name</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder="e.g. Stellar Interstellar Gala"
+                  value={form.name}
+                  onChange={handleChange('name')}
+                  required
+                />
+              </div>
+
+              {/* Date + Time */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelClass}>Date</label>
+                  <input
+                    type="date"
+                    className={inputClass}
+                    value={form.date}
+                    onChange={handleChange('date')}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Time</label>
+                  <input
+                    type="time"
+                    className={inputClass}
+                    value={form.time}
+                    onChange={handleChange('time')}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Venue + City */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelClass}>Venue</label>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    placeholder="Venue Name"
+                    value={form.venue}
+                    onChange={handleChange('venue')}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>City</label>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    placeholder="City, Country"
+                    value={form.city}
+                    onChange={handleChange('city')}
+                  />
+                </div>
+              </div>
+
+              {/* Capacity + Price */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelClass}>Capacity</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={`${inputClass} pl-12`}
+                      placeholder="0"
+                      min="1"
+                      value={form.capacity}
+                      onChange={handleChange('capacity')}
+                      required
+                    />
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#938ea1]">
+                      group
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass}>Price (XLM)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className={`${inputClass} pl-12`}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      value={form.priceXlm}
+                      onChange={handleChange('priceXlm')}
+                      required
+                    />
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#938ea1]">
+                      payments
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Image URL */}
+              <div>
+                <label className={labelClass}>Event Poster URL</label>
+                <input
+                  type="url"
+                  className={inputClass}
+                  placeholder="https://..."
+                  value={form.imageUrl}
+                  onChange={handleChange('imageUrl')}
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className={labelClass}>Description</label>
+                <textarea
+                  className={inputClass}
+                  placeholder="Describe your event's unique experience..."
+                  rows={4}
+                  value={form.description}
+                  onChange={handleChange('description')}
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-[#7C5CFF] hover:bg-[#8d72ff] text-[#EAEFF4] font-semibold text-xl py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(124,92,255,0.3)] active:scale-[0.98]"
+              >
+                Create Event on Stellar
+              </button>
+            </form>
+          </section>
+
+          {/* ── Live Preview ── */}
+          <aside className="lg:col-span-5">
+            <div className="sticky top-28 space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-[#7C5CFF] uppercase tracking-widest">
+                  Live Preview
+                </h3>
+                <span className="flex items-center gap-2 text-xs text-[#c9c4d8]">
+                  <span className="w-2 h-2 bg-green-500 rounded-full" />
+                  Real-time rendering
+                </span>
+              </div>
+
+              {/* NFT Ticket Preview Card */}
+              <div className="bg-[#15181C] border border-[#272C33] rounded-xl overflow-hidden shadow-2xl group">
+                <div className="aspect-[4/5] relative overflow-hidden">
+                  <img
+                    src={
+                      form.imageUrl ||
+                      'https://images.unsplash.com/photo-1540039155732-d67414006c3a?w=600&q=80'
+                    }
+                    alt="Event Preview"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1540039155732-d67414006c3a?w=600&q=80';
+                    }}
+                  />
+                  <div className="absolute top-4 right-4 bg-[#7C5CFF]/90 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                    <p className="font-mono text-sm text-white">
+                      XLM {form.priceXlm || '0.00'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  <div className="space-y-2">
+                    <span className="bg-[#7C5CFF]/10 text-[#7C5CFF] px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tighter">
+                      Verified Creator
+                    </span>
+                    <h4 className="text-2xl font-semibold text-[#e6e0ee] truncate">
+                      {form.name || 'Stellar Interstellar Gala'}
+                    </h4>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[#7C5CFF] text-sm">
+                        calendar_today
+                      </span>
+                      <span className="text-[#c9c4d8] text-sm">
+                        {form.date || 'Oct 24, 2024'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[#7C5CFF] text-sm">
+                        schedule
+                      </span>
+                      <span className="text-[#c9c4d8] text-sm">
+                        {form.time || '20:00 PM'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 col-span-2">
+                      <span className="material-symbols-outlined text-[#7C5CFF] text-sm">
+                        location_on
+                      </span>
+                      <span className="text-[#c9c4d8] text-sm truncate">
+                        {[form.venue, form.city].filter(Boolean).join(', ') || 'Nebula Lounge, San Francisco'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-[#272C33] flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-[#c9c4d8] uppercase tracking-widest font-medium">
+                        Network
+                      </span>
+                      <span className="font-mono text-sm text-[#e6e0ee]">Stellar Testnet</span>
+                    </div>
+                    <div className="w-12 h-12 bg-white rounded-lg p-1 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-black">qr_code_2</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info tip */}
+              <div className="bg-[#272C33]/30 border border-[#272C33] p-4 rounded-lg flex gap-3">
+                <span className="material-symbols-outlined text-[#7C5CFF] flex-shrink-0">info</span>
+                <p className="text-xs text-[#c9c4d8] leading-relaxed">
+                  Once created, your tickets will be minted as NFTs on the Stellar network. Ensure
+                  your capacity and price are final before deployment.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  );
+}
