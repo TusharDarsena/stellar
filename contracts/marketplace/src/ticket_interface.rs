@@ -8,7 +8,7 @@
 // since Soroban XDR encodes structs positionally. Any divergence silently
 // corrupts data. Keep in sync with ticket/src/types.rs.
 
-use soroban_sdk::{contractclient, contracttype, Address, Env, String, Symbol};
+use soroban_sdk::{contractclient, contracttype, Address, Env, String};
 
 #[derive(Clone, PartialEq, Debug)]
 #[contracttype]
@@ -51,6 +51,7 @@ pub struct Event {
 /// Generated client used by both production lib.rs and test.rs.
 /// Production: makes real cross-contract calls via XDR.
 /// Tests: calls into env.register(TicketContract, ()) using the same XDR encoding.
+#[allow(dead_code)]
 #[contractclient(name = "TicketContractClient")]
 pub trait TicketInterface {
     // Called in buy_listing (production + test)

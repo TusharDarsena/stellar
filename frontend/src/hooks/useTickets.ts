@@ -110,11 +110,11 @@ export function useTickets(): {
 
   useEffect(() => {
     if (!wallet.isConnected || !wallet.publicKey) {
-      setTickets([]);
+      setTimeout(() => setTickets([]), 0);
       stopPolling();
       return;
     }
-    startPolling(wallet.publicKey);
+    setTimeout(() => startPolling(wallet.publicKey!), 0);
     return stopPolling;
   }, [wallet.isConnected, wallet.publicKey, startPolling, stopPolling]);
 

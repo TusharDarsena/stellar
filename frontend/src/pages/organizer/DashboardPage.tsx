@@ -17,10 +17,10 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
   const { wallet, setTxState } = useAppStore();
   const { connectOrganizer } = useWallet();
 
-  const organizerEvents = wallet.publicKey 
-    ? events.filter(e => e.organizer === wallet.publicKey) 
+  const organizerEvents = wallet.publicKey
+    ? events.filter(e => e.organizer === wallet.publicKey)
     : [];
-  
+
   const totalEvents = organizerEvents.length;
   const totalTicketsSold = organizerEvents.reduce((s, event) => s + event.currentSupply, 0);
   const totalEscrow = organizerEvents.reduce((s, event) => s + (event.currentSupply * (event.pricePerTicket / 10_000_000)), 0);
@@ -173,7 +173,7 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
             const escrowXlm = ticketsSold * (event.pricePerTicket / 10_000_000);
             const canRelease = event.status === 'Completed';
             const lockedUntilLabel = canRelease ? undefined : `Locked Until ${new Date(event.dateUnix * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-            
+
             return (
               <OrganizerEventRow
                 key={event.eventId}

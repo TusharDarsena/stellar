@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use soroban_sdk::{symbol_short, Address, Env, String};
 
 pub fn emit_event_created(env: &Env, event_id: &String, organizer: &Address) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppView } from './types';
 import { LandingPage } from './pages/LandingPage';
 import { AppHeader } from './components/layout/AppHeader';
@@ -20,13 +20,34 @@ function App() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   
-  const { txState, wallet } = useAppStore();
+  // 1. Pull _hasHydrated from the store
+  const { txState, wallet, _hasHydrated } = useAppStore();
   const { connectOrganizer, connectAttendee } = useWallet();
+
+  // 2. Add an effect to auto-route connected users after a refresh
+  useEffect(() => {
+    if (_hasHydrated && currentView === 'landing' && wallet.isConnected) {
+      if (wallet.walletType === 'freighter') {
+        setCurrentView('organizer-dashboard');
+      } else {
+        setCurrentView('browse');
+      }
+    }
+  }, [_hasHydrated, wallet.isConnected, wallet.walletType, currentView]);
+
+  // 3. Prevent rendering until Zustand restores the session
+  if (!_hasHydrated) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        {/* A clean spinner utilizing your modern indigo and soft teal UI palette */}
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-teal-400 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const handleSelectRole = (view: AppView) => {
     setCurrentView(view);
   };
-
   const handleConnectWallet = async () => {
     if (currentView.startsWith('organizer') || currentView === 'scanner') {
       await connectOrganizer();

@@ -10,7 +10,7 @@ mod types;
 mod test;
 
 use crate::ticket_interface::TicketContractClient;
-use soroban_sdk::{contract, contractimpl, token, Address, Env, String, Symbol};
+use soroban_sdk::{contract, contractimpl, token, Address, Env, String};
 
 use crate::error::ContractError;
 use crate::ticket_interface::EventStatus;

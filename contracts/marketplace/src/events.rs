@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use soroban_sdk::{symbol_short, Address, Env, String};
 
 pub fn emit_listed(env: &Env, listing_id: &String, seller: &Address, ask_price: i128) {

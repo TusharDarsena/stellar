@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use soroban_sdk::{Address, Env, String};
 
 use crate::error::ContractError;

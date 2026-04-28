@@ -17,6 +17,7 @@ use crate::{TicketContract, TicketContractClient};
 
 struct TestSetup<'a> {
     env: Env,
+    admin: Address,
     organizer: Address,
     buyer: Address,
     buyer2: Address,
@@ -47,10 +48,11 @@ impl<'a> TestSetup<'a> {
         xlm_admin.mint(&buyer2, &(Self::PRICE * 10));
 
         let contract = TicketContractClient::new(&env, &env.register(TicketContract, ()));
-        contract.initialize(&marketplace, &xlm.address);
+        contract.initialize(&admin, &marketplace, &xlm.address);
 
         Self {
             env,
+            admin,
             organizer,
             buyer,
             buyer2,
@@ -312,7 +314,7 @@ fn test_double_initialization_rejected() {
     // Second initialize call must be rejected regardless of arguments
     assert_err(
         s.contract
-            .try_initialize(&other_marketplace, &s.xlm.address),
+            .try_initialize(&s.admin, &other_marketplace, &s.xlm.address),
         ContractError::AlreadyInitialized,
     );
 }

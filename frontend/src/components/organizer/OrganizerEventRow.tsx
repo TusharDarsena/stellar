@@ -1,5 +1,5 @@
 import React from 'react';
-import { Event, EventStatus, stroopsToXlm, formatEventDate } from '../../types';
+import { Event, EventStatus, formatEventDate } from '../../types';
 
 interface OrganizerEventRowProps {
   readonly event: Event;

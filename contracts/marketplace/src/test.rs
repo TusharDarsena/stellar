@@ -16,6 +16,7 @@ use crate::{MarketplaceContract, MarketplaceContractClient};
 
 struct TestSetup<'a> {
     env: Env,
+    admin: Address,
     organizer: Address,
     seller: Address,
     buyer: Address,
@@ -59,13 +60,14 @@ impl<'a> TestSetup<'a> {
         // Deploy TicketContract, initialize with marketplace address + XLM token
         let ticket_addr = env.register(TicketContract, ());
         let ticket = TicketContractClient::new(&env, &ticket_addr);
-        ticket.initialize(&marketplace_addr, &xlm.address);
+        ticket.initialize(&admin, &marketplace_addr, &xlm.address);
 
         // Initialize MarketplaceContract with ticket address + royalty rate
-        marketplace.initialize(&ticket_addr, &rate);
+        marketplace.initialize(&admin, &ticket_addr, &rate);
 
         Self {
             env,
+            admin,
             organizer,
             seller,
             buyer,
@@ -376,7 +378,7 @@ fn test_auth_correctly_required() {
 fn test_double_initialize_rejected() {
     let s = TestSetup::new();
     assert_err(
-        s.marketplace.try_initialize(&s.ticket.address, &10),
+        s.marketplace.try_initialize(&s.admin, &s.ticket.address, &10),
         ContractError::AlreadyInitialized,
     );
 }

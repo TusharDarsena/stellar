@@ -1,18 +1,14 @@
-// useEvents.ts — event list discovered via Soroban RPC event polling. (D-029)
-// Two-step: discover event IDs from ev_create events → fetch current on-chain state.
-// 30s cache. Never fetches inside render. No wallet connection required (public browse).
-
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { xdr, scValToNative } from '@stellar/stellar-sdk';
 import { getRpcServer, getEvent } from '../lib/soroban';
 import { TICKET_CONTRACT_ID } from '../lib/constants';
+import { fetchEventsMetadata } from '../lib/supabase';
 import type { Event } from '../types';
 
 const POLL_INTERVAL_MS = 30_000;
-// Approximate ledger window to scan (~24h on testnet, ~5s/ledger).
-// RPC nodes only retain events within their retention window — fetching
-// from genesis would fail. For mainnet, swap for an indexer. (D-029)
 const LEDGER_LOOKBACK = 17_280;
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80';
 
 export function useEvents(): {
   events: Event[];
@@ -32,20 +28,16 @@ export function useEvents(): {
 
     try {
       const server = getRpcServer();
-
-      // Get current ledger so we know a safe startLedger within the retention window
       const latestLedger = await server.getLatestLedger();
       const startLedger = Math.max(1, latestLedger.sequence - LEDGER_LOOKBACK);
 
-      // Step 1: Discover event IDs from ev_create contract events. (D-029)
-      // Contract publishes: topics=(ev_create, event_id), value=organizer
+      // Step 1: Discover event IDs from RPC events
       const eventsResult = await server.getEvents({
         startLedger,
         filters: [{
           type: 'contract',
           contractIds: [TICKET_CONTRACT_ID],
           topics: [
-            // topic[0] must match "ev_create" symbol
             [xdr.ScVal.scvSymbol('ev_create').toXDR('base64')],
           ],
         }],
@@ -53,39 +45,46 @@ export function useEvents(): {
 
       if (fetchId !== fetchRef.current) return;
 
-      // Step 2: Extract event IDs from topic[1] (soroban String → ScvString)
       const eventIds: string[] = [];
       for (const event of eventsResult.events) {
         try {
           if (event.topic.length < 2) continue;
-          // scValToNative converts ScvString → string, ScvSymbol → string
           const eventId = scValToNative(event.topic[1]) as string;
           if (eventId && !eventIds.includes(eventId)) {
             eventIds.push(eventId);
           }
         } catch {
-          // Skip malformed events
+          // skip malformed
         }
       }
 
-      // Step 3: Fetch current on-chain state for each discovered event ID
-      const settled = await Promise.allSettled(eventIds.map((id) => getEvent(id)));
+      // Step 2: Fetch on-chain state + Supabase metadata in parallel
+      const [settled, metaMap] = await Promise.all([
+        Promise.allSettled(eventIds.map((id) => getEvent(id))),
+        fetchEventsMetadata(eventIds),
+      ]);
+
+      if (fetchId !== fetchRef.current) return;
+
+      // Step 3: Merge — RPC wins for on-chain fields, Supabase wins for metadata
       const resolved: Event[] = settled
-        .map((r) => {
-          if (r.status === 'fulfilled' && r.value) {
-            return {
-              ...r.value,
-              imageUrl: r.value.imageUrl || 'https://images.unsplash.com/photo-1540039155732-d67414073fb8?q=80&w=2667&auto=format&fit=crop',
-              description: r.value.description || 'Join us for an unforgettable event! Secure your tickets now.',
-              venue: r.value.venue || 'TBA Venue',
-              city: r.value.city || 'TBA City',
-            } as Event;
-          }
-          return null;
+        .map((r, i) => {
+          if (r.status !== 'fulfilled' || !r.value) return null;
+          const onChain = r.value;
+          const meta = metaMap[eventIds[i]];
+
+          return {
+            ...onChain,
+            // Metadata from Supabase with safe fallbacks
+            name: meta?.name ?? onChain.name ?? 'Unnamed Event',
+            venue: meta?.venue ?? 'Venue TBA',
+            city: meta?.city ?? '',
+            imageUrl: meta?.image_url ?? FALLBACK_IMAGE,
+            description: meta?.description ?? 'No description provided.',
+          } as Event;
         })
         .filter((e): e is Event => e !== null);
 
-      if (fetchId !== fetchRef.current) return;
       setEvents(resolved);
     } catch (err) {
       if (fetchId !== fetchRef.current) return;
