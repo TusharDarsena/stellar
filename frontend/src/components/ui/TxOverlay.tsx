@@ -10,7 +10,7 @@ export function TxOverlay({ txState }: TxOverlayProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="bg-surface-container border border-outline-dim rounded-2xl p-8 max-w-md w-full flex flex-col items-center text-center shadow-2xl">
+      <div className="bg-surface-container border border-outline-dim rounded-2xl p-5 sm:p-8 max-w-sm sm:max-w-md w-full mx-4 flex flex-col items-center text-center shadow-2xl">
         
         {txState.status === 'success' ? (
           <div className="w-16 h-16 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center mb-6">
@@ -27,7 +27,7 @@ export function TxOverlay({ txState }: TxOverlayProps) {
           </div>
         )}
 
-        <h3 className="text-xl font-bold text-white mb-2">
+        <h3 className="text-base sm:text-xl font-bold text-white mb-2">
           {txState.status === 'building' && 'Building Transaction...'}
           {txState.status === 'signing' && 'Waiting for Signature...'}
           {txState.status === 'submitting' && 'Submitting to Network...'}
@@ -48,7 +48,7 @@ export function TxOverlay({ txState }: TxOverlayProps) {
         )}
 
         {txState.errorMessage && (
-          <div className="bg-red-500/10 text-red-400 text-xs p-3 rounded-lg w-full text-left font-mono whitespace-pre-wrap">
+          <div className="bg-red-500/10 text-red-400 text-xs p-3 rounded-lg w-full text-left font-mono whitespace-pre-wrap break-all overflow-y-auto max-h-48">
             {txState.errorMessage}
           </div>
         )}

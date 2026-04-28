@@ -41,9 +41,9 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
 
   if (!wallet.isConnected) {
     return (
-      <div className="bg-[#14121b] text-[#e6e0ee] min-h-screen flex flex-col items-center justify-center p-6">
-        <h1 className="text-4xl font-bold mb-4 tracking-tighter">Organizer Hub</h1>
-        <p className="text-[#c9c4d8] mb-8 max-w-md text-center">
+      <div className="bg-[#14121b] text-[#e6e0ee] min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 w-full overflow-x-hidden text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 tracking-tighter text-center w-full max-w-4xl">Organizer Hub</h1>
+        <p className="text-[#c9c4d8] mb-8 sm:mb-10 w-full max-w-xs sm:max-w-md md:max-w-2xl lg:max-w-3xl text-center mx-auto leading-relaxed text-sm sm:text-base">
           Connect your Freighter wallet to manage events, scan tickets, and withdraw funds.
         </p>
         <button
@@ -91,11 +91,11 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
         </div>
       </header>
 
-      <main className="max-w-[1280px] mx-auto px-6 py-8 pb-32">
+      <main className="max-w-[1280px] mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 sm:pb-32">
         {/* Header Actions */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-16">
           <div>
-            <h1 className="text-5xl font-bold text-[#e6e0ee] tracking-tight">Organizer Hub</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[#e6e0ee] tracking-tight">Organizer Hub</h1>
             <p className="text-base text-[#c9c4d8] mt-1">
               Manage your stellar event inventory and settlements.
             </p>

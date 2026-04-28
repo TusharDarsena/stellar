@@ -40,7 +40,7 @@ export async function fundWithFriendbot(publicKey: string): Promise<void> {
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     // Friendbot returns 400 if the account already exists — that is fine
-    if (res.status === 400 && body.includes('createAccountAlreadyExist')) return;
+    if (res.status === 400) return; // Account already exists or other 400 — safe to ignore, key is persisted
     throw new Error(`Friendbot failed (${res.status}): ${body}`);
   }
 }

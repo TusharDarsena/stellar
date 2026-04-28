@@ -14,6 +14,10 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "paths": {
+      "ticket": ["./src/contracts/ticket/src/index.ts"],
+      "marketplace": ["./src/contracts/marketplace/src/index.ts"]
+    },
 
     /* Linting */
     "noUnusedLocals": false,
