@@ -92,9 +92,12 @@ export function useWallet() {
   }, [setWallet]);
 
   // ── Disconnect ─────────────────────────────────────────────────────────────
-  // Does NOT clear localStorage — the burner key persists across sessions. (D-028)
-  const disconnectWallet = useCallback(() => {
-    setWallet({
+  const disconnectWallet = () => {
+    // 1. Wipe the physical burner key from storage so it cannot be rehydrated
+    localStorage.removeItem('stellar_burner_secret');
+
+    // 2. Clear the Zustand application state
+    useAppStore.getState().setWallet({
       isConnected: false,
       publicKey: null,
       walletType: null,
@@ -102,12 +105,8 @@ export function useWallet() {
       secretKey: null,
       signFn: null,
     });
-  }, [setWallet]);
-
-  return {
-    wallet,
-    connectOrganizer,
-    connectAttendee,
-    disconnectWallet,
   };
+
+  // Ensure it's exported at the bottom of your hook
+  return { connectOrganizer, connectAttendee, disconnectWallet };
 }

@@ -31,7 +31,7 @@ const EMPTY_FORM: CreateEventFormData = {
 
 import { useAppStore } from '../../store/useAppStore';
 import { createEvent } from '../../lib/soroban';
-import { generateID } from '../../lib/utils';
+import { upsertEventMetadata } from '../../lib/supabase';
 import { xlmToStroops } from '../../types';
 
 export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
@@ -52,11 +52,9 @@ export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
 
     setTxState({ status: 'building' });
     try {
-      // Convert date + time to Unix timestamp
       const dateTimeStr = `${form.date}T${form.time}:00`;
       const dateUnix = Math.floor(new Date(dateTimeStr).getTime() / 1000);
 
-      // Prevent precision loss when converting i128 to Number in Soroban later
       const price = parseFloat(form.priceXlm);
       if (price > 900_000_000) {
         alert('Price exceeds maximum safe limit for MVP precision.');
@@ -64,18 +62,29 @@ export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
         return;
       }
 
-      // Convert XLM to stroops as bigint (D-007 revised — BigInt required by contract binding)
       const priceStroops = xlmToStroops(price);
       const capacity = parseInt(form.capacity, 10);
 
-      // eventId generated client-side — organizer controls the ID namespace (D-029)
-      const eventId = generateID();
+      // Use timestamp-based ID — links on-chain event to Supabase metadata
+      const eventId = Date.now().toString();
 
       await createEvent(
         { eventId, name: form.name, dateUnix, capacityXlm: capacity, priceStroops },
         wallet.publicKey,
         wallet.signFn,
       );
+
+      // Non-blocking Supabase metadata write — event exists on-chain regardless
+      upsertEventMetadata({
+        event_id: eventId,
+        organizer_address: wallet.publicKey,
+        name: form.name,
+        description: form.description || null,
+        image_url: form.imageUrl || null,
+        venue: form.venue || null,
+        city: form.city || null,
+        category: null,
+      }).catch(err => console.warn('[CreateEvent] Supabase write failed:', err));
 
       setTxState({ status: 'success', hash: eventId });
       setTimeout(() => {
@@ -267,9 +276,10 @@ export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
 
               {/* Disclaimer */}
               <div className="bg-[#272C33]/20 border border-[#7C5CFF]/30 p-3 rounded-lg flex items-start gap-3 mt-4">
-                <span className="material-symbols-outlined text-[#7C5CFF] text-sm mt-0.5">warning</span>
+                <span className="material-symbols-outlined text-[#7C5CFF] text-sm mt-0.5">info</span>
                 <p className="text-xs text-[#c9c4d8] leading-relaxed">
-                  Note: Image, venue, and description details are for preview only and are not stored permanently on-chain.
+                  Core details (capacity, price, date) are stored permanently on the Stellar blockchain.
+                  Rich metadata (name, venue, image, description) is stored in our database and linked by event ID.
                 </p>
               </div>
 

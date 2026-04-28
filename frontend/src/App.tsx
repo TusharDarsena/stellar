@@ -19,12 +19,11 @@ function App() {
   const [currentView, setCurrentView] = useState<AppView>('landing');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  
-  // 1. Pull _hasHydrated from the store
-  const { txState, wallet, _hasHydrated } = useAppStore();
-  const { connectOrganizer, connectAttendee } = useWallet();
 
-  // 2. Add an effect to auto-route connected users after a refresh
+  const { txState, wallet, _hasHydrated } = useAppStore();
+  const { connectOrganizer, connectAttendee, disconnectWallet } = useWallet();
+
+  // Auto-route connected users after a refresh
   useEffect(() => {
     if (_hasHydrated && currentView === 'landing' && wallet.isConnected) {
       if (wallet.walletType === 'freighter') {
@@ -35,12 +34,11 @@ function App() {
     }
   }, [_hasHydrated, wallet.isConnected, wallet.walletType, currentView]);
 
-  // 3. Prevent rendering until Zustand restores the session
+  // Prevent rendering until Zustand restores the session
   if (!_hasHydrated) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        {/* A clean spinner utilizing your modern indigo and soft teal UI palette */}
-        <div className="w-10 h-10 border-4 border-indigo-600 border-t-teal-400 rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -48,12 +46,18 @@ function App() {
   const handleSelectRole = (view: AppView) => {
     setCurrentView(view);
   };
+
   const handleConnectWallet = async () => {
     if (currentView.startsWith('organizer') || currentView === 'scanner') {
       await connectOrganizer();
     } else {
       await connectAttendee();
     }
+  };
+
+  const handleDisconnect = () => {
+    disconnectWallet();
+    setCurrentView('landing');
   };
 
   const handleEventClick = (eventId: string) => {
@@ -68,13 +72,11 @@ function App() {
 
   const handlePurchaseComplete = (ticketId: string) => {
     console.log(`Purchased ticket ${ticketId}`);
-    // Show success view or redirect to tickets
     setCurrentView('my-tickets');
   };
 
   const handleShowQR = (ticketId: string) => {
     setSelectedTicketId(ticketId);
-    // 'qr-display' is defined in AppView — attendee QR path
     setCurrentView('qr-display');
   };
 
@@ -86,18 +88,18 @@ function App() {
         return <BrowsePage onEventClick={handleEventClick} />;
       case 'event-detail':
         return selectedEventId ? (
-          <EventDetailPage 
-            eventId={selectedEventId} 
+          <EventDetailPage
+            eventId={selectedEventId}
             onBack={() => setCurrentView('browse')}
-            onPurchase={handlePurchaseInit} 
+            onPurchase={handlePurchaseInit}
           />
         ) : (
           <BrowsePage onEventClick={handleEventClick} />
         );
       case 'purchase':
         return selectedEventId ? (
-          <PurchasePage 
-            eventId={selectedEventId} 
+          <PurchasePage
+            eventId={selectedEventId}
             onBack={() => setCurrentView('event-detail')}
             onPurchaseComplete={handlePurchaseComplete}
           />
@@ -144,19 +146,20 @@ function App() {
   return (
     <>
       <TxOverlay txState={txState} />
-      
-      <AppHeader 
-        currentView={currentView} 
-        wallet={wallet} 
-        onNavigate={setCurrentView} 
-        onConnectWallet={handleConnectWallet} 
+
+      <AppHeader
+        currentView={currentView}
+        wallet={wallet}
+        onNavigate={setCurrentView}
+        onConnectWallet={handleConnectWallet}
+        onDisconnect={handleDisconnect}
       />
-      
+
       {renderView()}
-      
-      <BottomNav 
-        currentView={currentView} 
-        onNavigate={setCurrentView} 
+
+      <BottomNav
+        currentView={currentView}
+        onNavigate={setCurrentView}
       />
     </>
   );

@@ -39,11 +39,14 @@ export function useEvents(): {
           contractIds: [TICKET_CONTRACT_ID],
           topics: [
             [xdr.ScVal.scvSymbol('ev_create').toXDR('base64')],
+            ['*'], // Wildcard added to catch the event_id slot
           ],
         }],
       });
 
       if (fetchId !== fetchRef.current) return;
+
+      console.log("RPC Events Result:", eventsResult);
 
       const eventIds: string[] = [];
       for (const event of eventsResult.events) {
@@ -56,6 +59,14 @@ export function useEvents(): {
         } catch {
           // skip malformed
         }
+      }
+
+      console.log("Discovered Event IDs:", eventIds);
+
+      // If no events found on-chain, exit early to avoid empty Supabase call
+      if (eventIds.length === 0) {
+        setEvents([]);
+        return;
       }
 
       // Step 2: Fetch on-chain state + Supabase metadata in parallel
@@ -75,7 +86,6 @@ export function useEvents(): {
 
           return {
             ...onChain,
-            // Metadata from Supabase with safe fallbacks
             name: meta?.name ?? onChain.name ?? 'Unnamed Event',
             venue: meta?.venue ?? 'Venue TBA',
             city: meta?.city ?? '',
