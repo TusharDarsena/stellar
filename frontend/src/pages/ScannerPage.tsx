@@ -12,8 +12,13 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
   const [scanResult, setScanResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [scanDetails, setScanDetails] = useState<{ ticketId: string; walletAddress: string } | null>(null);
   const { wallet } = useAppStore();
+  const scannerRef = React.useRef<Html5Qrcode | null>(null);
 
   const handleScan = async (data: string) => {
+    // Pause immediately to prevent spam
+    if (scannerRef.current) {
+      scannerRef.current.pause(true);
+    }
     // Step 1: Verify format, timestamp, and ed25519 signature locally. (D-005, D-006)
     const parsed = verifyQRPayload(data);
     if (!parsed) {
@@ -45,12 +50,10 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
   };
 
   useEffect(() => {
-    let html5QrCode: Html5Qrcode;
-    
     // Slight delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      html5QrCode = new Html5Qrcode("qr-reader");
-      html5QrCode.start(
+      scannerRef.current = new Html5Qrcode("qr-reader");
+      scannerRef.current.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
@@ -66,8 +69,8 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
 
     return () => {
       clearTimeout(timer);
-      if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(console.error);
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch(console.error);
       }
     };
   }, []);
@@ -227,7 +230,10 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
                   </div>
                 </div>
                 <button 
-                  onClick={() => setScanResult('idle')}
+                  onClick={() => {
+                    setScanResult('idle');
+                    if (scannerRef.current) scannerRef.current.resume();
+                  }}
                   className="w-full bg-[#7C5CFF] text-white font-semibold text-xl py-4 rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-transform"
                 >
                   <span className="material-symbols-outlined">refresh</span>
@@ -253,7 +259,10 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
               </div>
               <div className="p-8">
                 <button 
-                  onClick={() => setScanResult('idle')}
+                  onClick={() => {
+                    setScanResult('idle');
+                    if (scannerRef.current) scannerRef.current.resume();
+                  }}
                   className="w-full bg-[#272C33] text-white font-semibold text-xl py-4 rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-transform hover:bg-[#36333e]"
                 >
                   <span className="material-symbols-outlined">refresh</span>

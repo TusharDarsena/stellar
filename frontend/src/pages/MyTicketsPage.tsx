@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Ticket, Event } from '../types';
+import { Ticket, Event, formatEventDate } from '../types';
 import { TicketCard } from '../components/tickets/TicketCard';
 
 import { useTickets } from '../hooks/useTickets';
@@ -15,6 +15,9 @@ export function MyTicketsPage({ onShowQR, onBrowseMore }: MyTicketsPageProps) {
   const { events, loading: eventsLoading } = useEvents();
 
   const loading = ticketsLoading || eventsLoading;
+
+  const activeTickets = tickets.filter(t => t.status === 'Active');
+  const historyTickets = tickets.filter(t => t.status === 'Used' || t.status === 'Refunded');
 
   return (
     <main className="pt-24 pb-32 px-4 md:px-8 max-w-7xl mx-auto min-h-screen">
@@ -52,7 +55,7 @@ export function MyTicketsPage({ onShowQR, onBrowseMore }: MyTicketsPageProps) {
               {error}
             </div>
           ) : (
-            tickets.map(ticket => {
+            activeTickets.map(ticket => {
               const event = events.find(e => e.eventId === ticket.eventId);
               if (!event) return null;
               return (
@@ -92,21 +95,38 @@ export function MyTicketsPage({ onShowQR, onBrowseMore }: MyTicketsPageProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#272C33]/30">
-                  <tr className="group hover:bg-white/5 transition-colors">
-                    <td className="py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-[#272C33]"></div>
-                        <span className="text-base">Stellar Gala 2024</span>
-                      </div>
-                    </td>
-                    <td className="py-6 text-[#c9c4d8] text-sm">Oct 20, 2024</td>
-                    <td className="py-6">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#272C33] text-slate-400">Used</span>
-                    </td>
-                    <td className="py-6 text-right">
-                      <span className="font-mono text-[#7C5CFF]/70 text-sm">0x882...f9a</span>
-                    </td>
-                  </tr>
+                  {historyTickets.map(ticket => {
+                    const event = events.find(e => e.eventId === ticket.eventId);
+                    if (!event) return null;
+                    return (
+                      <tr key={ticket.ticketId} className="group hover:bg-white/5 transition-colors">
+                        <td className="py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded bg-[#272C33] overflow-hidden">
+                              <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-base">{event.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-6 text-[#c9c4d8] text-sm">{formatEventDate(event.dateUnix)}</td>
+                        <td className="py-6">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-[#272C33] text-slate-400">{ticket.status}</span>
+                        </td>
+                        <td className="py-6 text-right">
+                          <span className="font-mono text-[#7C5CFF]/70 text-sm">
+                            {ticket.ticketId.substring(0, 12)}...
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {historyTickets.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-slate-400">
+                        No recent history.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

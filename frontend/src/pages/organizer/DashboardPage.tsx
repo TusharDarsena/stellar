@@ -9,10 +9,13 @@ interface DashboardPageProps {
 
 import { useEvents } from '../../hooks/useEvents';
 import { useAppStore } from '../../store/useAppStore';
+import { useWallet } from '../../hooks/useWallet';
+import { releaseFunds } from '../../lib/soroban';
 
 export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPageProps) {
   const { events } = useEvents();
-  const { wallet } = useAppStore();
+  const { wallet, setTxState } = useAppStore();
+  const { connectOrganizer } = useWallet();
 
   const organizerEvents = wallet.publicKey 
     ? events.filter(e => e.organizer === wallet.publicKey) 
@@ -24,13 +27,34 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
 
   const handleRelease = async (eventId: string) => {
     if (!wallet.isConnected || !wallet.publicKey || !wallet.signFn) return;
+    setTxState({ status: 'signing' });
     try {
-      // TODO: wire to Soroban release_funds call in soroban.ts
-      console.log(`Release funds for ${eventId}`);
-    } catch (e) {
+      await releaseFunds(eventId, wallet.publicKey, wallet.signFn);
+      setTxState({ status: 'success', hash: 'Funds released successfully!' });
+      setTimeout(() => setTxState({ status: 'idle' }), 3000);
+    } catch (e: any) {
       console.error('Release funds failed', e);
+      setTxState({ status: 'error', errorMessage: e.message || 'Failed to release funds' });
+      setTimeout(() => setTxState({ status: 'idle' }), 3000);
     }
   };
+
+  if (!wallet.isConnected) {
+    return (
+      <div className="bg-[#14121b] text-[#e6e0ee] min-h-screen flex flex-col items-center justify-center p-6">
+        <h1 className="text-4xl font-bold mb-4 tracking-tighter">Organizer Hub</h1>
+        <p className="text-[#c9c4d8] mb-8 max-w-md text-center">
+          Connect your Freighter wallet to manage events, scan tickets, and withdraw funds.
+        </p>
+        <button
+          onClick={connectOrganizer}
+          className="bg-[#7C5CFF] hover:bg-[#8d72ff] text-[#EAEFF4] font-semibold text-lg py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(124,92,255,0.3)] active:scale-[0.98]"
+        >
+          Connect Freighter
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#14121b] text-[#e6e0ee] min-h-screen">
@@ -97,7 +121,6 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
             </p>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-semibold text-[#e6e0ee]">{totalEvents}</span>
-              <span className="text-[#7C5CFF] text-sm">+2 this month</span>
             </div>
           </div>
 
@@ -113,7 +136,6 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
               <span className="text-3xl font-semibold text-[#e6e0ee]">
                 {totalTicketsSold.toLocaleString()}
               </span>
-              <span className="text-[#7C5CFF] text-sm">84% capacity</span>
             </div>
           </div>
 

@@ -265,6 +265,14 @@ export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
                 />
               </div>
 
+              {/* Disclaimer */}
+              <div className="bg-[#272C33]/20 border border-[#7C5CFF]/30 p-3 rounded-lg flex items-start gap-3 mt-4">
+                <span className="material-symbols-outlined text-[#7C5CFF] text-sm mt-0.5">warning</span>
+                <p className="text-xs text-[#c9c4d8] leading-relaxed">
+                  Note: Image, venue, and description details are for preview only and are not stored permanently on-chain.
+                </p>
+              </div>
+
               <button
                 type="submit"
                 className="w-full bg-[#7C5CFF] hover:bg-[#8d72ff] text-[#EAEFF4] font-semibold text-xl py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(124,92,255,0.3)] active:scale-[0.98]"

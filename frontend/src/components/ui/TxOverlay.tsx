@@ -35,9 +35,15 @@ export function TxOverlay({ txState }: TxOverlayProps) {
           {txState.status === 'error' && 'Transaction Failed'}
         </h3>
 
-        {txState.hash && (
+        {txState.hash && !txState.hash.includes(' ') && (
           <p className="text-sm text-on-surface-variant mb-4">
             Hash: <span className="font-mono text-primary">{txState.hash.slice(0, 8)}...{txState.hash.slice(-8)}</span>
+          </p>
+        )}
+
+        {txState.message && (
+          <p className="text-sm text-on-surface-variant mb-4 font-medium">
+            {txState.message}
           </p>
         )}
 

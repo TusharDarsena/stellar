@@ -52,14 +52,14 @@ export function AppHeader({ currentView, wallet, onNavigate, onConnectWallet }: 
           </button>
           
           {wallet.isConnected ? (
-            <button className="hidden md:flex items-center gap-2 bg-surface-container border border-outline-dim text-on-primary px-4 py-2 rounded-lg font-semibold hover:bg-outline-dim active:scale-95 duration-150">
+            <button className="flex items-center gap-2 bg-surface-container border border-outline-dim text-on-primary px-4 py-2 rounded-lg font-semibold hover:bg-outline-dim active:scale-95 duration-150">
               <span className="material-symbols-outlined text-sm text-primary">wallet</span>
               {wallet.xlmBalance} XLM
             </button>
           ) : (
             <button 
               onClick={onConnectWallet}
-              className="hidden md:flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg font-semibold hover:brightness-110 active:scale-95 duration-150"
+              className="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg font-semibold hover:brightness-110 active:scale-95 duration-150"
             >
               <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
               Connect Wallet

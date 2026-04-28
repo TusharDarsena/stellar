@@ -6,6 +6,7 @@ import { purchaseTicket } from '../lib/soroban';
 import { generateID } from '../lib/utils';
 
 import { useEvents } from '../hooks/useEvents';
+import { useWallet } from '../hooks/useWallet';
 
 interface PurchasePageProps {
   eventId: string;
@@ -17,22 +18,15 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete }: PurchasePa
   const { events, loading, error } = useEvents();
   const event = events.find(e => e.eventId === eventId);
 
-  const [quantity, setQuantity] = useState(1);
+  const quantity = 1;
   const { wallet, setTxState } = useAppStore();
+  const { connectAttendee } = useWallet();
   const priceXlm = event ? parseFloat(stroopsToXlm(event.pricePerTicket)) : 0;
   const totalPrice = priceXlm * quantity;
 
   if (loading) return <div className="p-20 text-center text-slate-400">Loading...</div>;
   if (error) return <div className="p-20 text-center text-red-500">{error}</div>;
   if (!event) return <div className="p-20 text-center text-slate-400">Event not found</div>;
-
-  const handleIncrement = () => {
-    if (quantity < 10) setQuantity(q => q + 1);
-  };
-
-  const handleDecrement = () => {
-    if (quantity > 1) setQuantity(q => q - 1);
-  };
 
   const handlePurchase = async () => {
     if (!wallet.isConnected || !wallet.publicKey || !wallet.signFn) return;
@@ -127,23 +121,9 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete }: PurchasePa
             <p className="text-sm text-[#938ea1]">General Admission - Tier 1</p>
           </div>
           <div className="flex items-center justify-center gap-12 mb-10">
-            <button 
-              onClick={handleDecrement}
-              disabled={quantity <= 1}
-              className="w-16 h-16 rounded-full border border-[#272C33] bg-[#0E1113] hover:border-[#7C5CFF] text-white transition-all active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:hover:border-[#272C33]"
-            >
-              <span className="material-symbols-outlined text-3xl">remove</span>
-            </button>
             <div className="text-center w-24">
-              <span className="text-[80px] font-bold leading-none">{quantity.toString().padStart(2, '0')}</span>
+              <span className="text-[80px] font-bold leading-none">01</span>
             </div>
-            <button 
-              onClick={handleIncrement}
-              disabled={quantity >= 10}
-              className="w-16 h-16 rounded-full border border-[#7C5CFF] bg-[#7C5CFF]/10 text-[#7C5CFF] hover:bg-[#7C5CFF]/20 transition-all active:scale-95 flex items-center justify-center disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-3xl">add</span>
-            </button>
           </div>
           
           <div className="border-t border-[#272C33] pt-6 flex justify-between items-center">
@@ -174,14 +154,23 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete }: PurchasePa
 
         {/* Actions */}
         <div className="flex flex-col gap-4">
-          <Button 
-            onClick={handlePurchase} 
-            size="lg" 
-            className="w-full py-4 text-lg"
-            disabled={!wallet.isConnected}
-          >
-            {wallet.isConnected ? 'Continue to Payment' : 'Connect Wallet to continue'}
-          </Button>
+          {wallet.isConnected ? (
+            <Button 
+              onClick={handlePurchase} 
+              size="lg" 
+              className="w-full py-4 text-lg"
+            >
+              Continue to Payment
+            </Button>
+          ) : (
+            <Button 
+              onClick={connectAttendee} 
+              size="lg" 
+              className="w-full py-4 text-lg"
+            >
+              Connect Wallet to continue
+            </Button>
+          )}
           <Button variant="secondary" onClick={onBack} size="lg" className="w-full py-4 text-lg">
             Cancel
           </Button>

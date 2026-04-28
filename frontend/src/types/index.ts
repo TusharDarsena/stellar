@@ -44,6 +44,7 @@ export interface TxState {
   status: TxStatus;
   hash?: string;
   errorMessage?: string;
+  message?: string;
 }
 
 export const xlmToStroops = (xlm: number): bigint => BigInt(Math.floor(xlm * 10_000_000));

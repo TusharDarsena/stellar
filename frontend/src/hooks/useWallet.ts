@@ -80,6 +80,12 @@ export function useWallet() {
         secretKey,
         signFn,
       });
+
+      // Show success overlay
+      const { setTxState } = useAppStore.getState();
+      setTxState({ status: 'success', message: 'Burner Wallet Created & Funded (10,000 testnet XLM)' });
+      setTimeout(() => setTxState({ status: 'idle' }), 3000);
+
     } catch (err) {
       console.error('[useWallet] Failed to connect Burner Wallet:', err);
     }

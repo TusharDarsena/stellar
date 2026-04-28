@@ -5,9 +5,11 @@ import { Keypair } from '@stellar/stellar-sdk';
 //
 // The signature covers the UTF-8 bytes of "{wallet_address}:{ticket_id}:{timestamp}".
 // Verification uses Keypair.verify() — no network call needed. (D-005)
-// Timestamp check is |now - timestamp| < 30s — NOT a windowed floor. (D-006)
+// Timestamp check is |now - timestamp| < 45s — NOT a windowed floor. (D-006)
 
-const PAYLOAD_EXPIRY_SECONDS = 30;
+// PAYLOAD_EXPIRY_SECONDS provides a 15-second grace period for device clock drift,
+// even though the UI continues to generate a fresh QR code every 30 seconds.
+const PAYLOAD_EXPIRY_SECONDS = 45;
 
 /**
  * Build a signed QR payload string.

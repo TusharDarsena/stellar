@@ -66,7 +66,7 @@ export function EventDetailPage({ eventId, onBack, onPurchase }: EventDetailPage
               <div className="flex items-center gap-2 py-2 px-3 bg-[#1c1a24] rounded-lg w-fit border border-[#272C33]">
                 <span className="material-symbols-outlined text-[#cabeff] text-sm">key</span>
                 <span className="font-mono text-[#c9c4d8] text-xs truncate max-w-[150px] md:max-w-none">
-                  GD3V...4Z7Q (Stellar Ecosystem Foundation)
+                  {event.organizer.substring(0, 4)}...{event.organizer.substring(event.organizer.length - 4)} (Stellar Network)
                 </span>
               </div>
             </section>
@@ -89,7 +89,7 @@ export function EventDetailPage({ eventId, onBack, onPurchase }: EventDetailPage
                 </div>
                 <div>
                   <p className="text-xs font-semibold tracking-wider uppercase text-[#938ea1]">Time</p>
-                  <p className="text-base text-[#e6e0ee]">19:00 - 02:00 GMT</p>
+                  <p className="text-base text-[#e6e0ee]">Time TBA</p>
                 </div>
               </div>
               
@@ -182,7 +182,7 @@ export function EventDetailPage({ eventId, onBack, onPurchase }: EventDetailPage
               </div>
               <div>
                 <p className="text-[10px] text-[#938ea1] uppercase font-bold">Organizer</p>
-                <p className="text-sm text-[#e6e0ee] font-medium">{event.organizer}</p>
+                <p className="text-sm text-[#e6e0ee] font-medium">{event.organizer.substring(0, 4)}...{event.organizer.substring(event.organizer.length - 4)}</p>
               </div>
               <button className="ml-auto text-[#cabeff] text-sm font-bold hover:underline">
                 Follow

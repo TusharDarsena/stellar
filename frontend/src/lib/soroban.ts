@@ -2,7 +2,7 @@
 // All components call these wrappers; nothing imports @stellar/stellar-sdk directly. (AGENTS.md)
 // Transaction pattern: AssembledTransaction.signAndSend() — D-007 revised.
 
-import { rpc as SorobanRpc } from 'ticket';
+import { rpc as SorobanRpc } from '@stellar/stellar-sdk';
 import { Client as TicketClient } from 'ticket';
 import { Client as MarketplaceClient } from 'marketplace';
 
