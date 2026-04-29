@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, Event, formatEventDate, xlmToStroops } from '../types';
+import { Ticket, Event, formatEventDate, formatDateTime, xlmToStroops } from '../types';
 import { TicketCard } from '../components/tickets/TicketCard';
 
 import { generateID } from '../lib/utils';
@@ -131,7 +131,11 @@ export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, o
   const error = errorTickets;
 
   const activeTickets = tickets.filter(t => t.status === 'Active');
-  const historyTickets = tickets.filter(t => t.status === 'Used' || t.status === 'Refunded');
+  const historyTickets = [...tickets].sort((a, b) => {
+    const da = a.purchasedAt ? new Date(a.purchasedAt).getTime() : 0;
+    const db = b.purchasedAt ? new Date(b.purchasedAt).getTime() : 0;
+    return db - da;
+  });
 
   useEffect(() => {
     if (activeTickets.length === 0) return;
@@ -227,9 +231,9 @@ export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, o
                 <thead>
                   <tr className="text-[#c9c4d8] border-b border-[#272C33]">
                     <th className="pb-4 text-xs font-semibold tracking-wider uppercase">EVENT</th>
-                    <th className="pb-4 text-xs font-semibold tracking-wider uppercase">DATE</th>
+                    <th className="pb-4 text-xs font-semibold tracking-wider uppercase">PURCHASED</th>
                     <th className="pb-4 text-xs font-semibold tracking-wider uppercase">STATUS</th>
-                    <th className="pb-4 text-xs font-semibold tracking-wider uppercase text-right">TRANSACTION</th>
+                    <th className="pb-4 text-xs font-semibold tracking-wider uppercase text-right">TICKET ID</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#272C33]/30">
@@ -246,9 +250,15 @@ export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, o
                             <span className="text-base">{event.name}</span>
                           </div>
                         </td>
-                        <td className="py-6 text-[#c9c4d8] text-sm">{formatEventDate(event.dateUnix)}</td>
+                        <td className="py-6 text-[#c9c4d8] text-sm">{formatDateTime(ticket.purchasedAt)}</td>
                         <td className="py-6">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-[#272C33] text-slate-400">{ticket.status}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                            ticket.status === 'Active' ? 'bg-emerald-500/20 text-emerald-400' :
+                            ticket.status === 'Used' ? 'bg-[#272C33] text-slate-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {ticket.status}
+                          </span>
                         </td>
                         <td className="py-6 text-right">
                           <span className="font-mono text-[#7C5CFF]/70 text-sm">

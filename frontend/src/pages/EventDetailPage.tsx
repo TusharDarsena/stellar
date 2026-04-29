@@ -22,35 +22,10 @@ export function EventDetailPage({ eventId, onBack, onPurchase }: EventDetailPage
 
   return (
     <div className="bg-[#0E1113] min-h-screen">
-      {/* Sticky Header */}
-      <header className="fixed top-0 w-full z-50 bg-[#15181C]/85 backdrop-blur-md border-b border-[#272C33]">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={onBack}
-              className="p-2 hover:bg-[#272C33] rounded-full transition-colors flex items-center justify-center"
-            >
-              <span className="material-symbols-outlined text-[#e6e0ee]">arrow_back</span>
-            </button>
-            <h2 className="text-xl font-semibold text-[#e6e0ee] truncate max-w-[200px] md:max-w-none">
-              {event.name}
-            </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-[#272C33] rounded-full transition-colors flex items-center justify-center">
-              <span className="material-symbols-outlined text-[#e6e0ee]">share</span>
-            </button>
-            <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-[#36333e] rounded-lg text-sm font-semibold text-[#c9c4d8] hover:text-[#e6e0ee] transition-colors">
-              <span className="material-symbols-outlined text-sm">favorite</span>
-              Save
-            </button>
-          </div>
-        </div>
-      </header>
 
-      <main className="pt-16 pb-24 md:pb-12 max-w-7xl mx-auto">
+      <main className="pt-24 pb-24 md:pb-12 max-w-7xl mx-auto px-4 md:px-8">
         {/* Hero Section */}
-        <div className="w-full aspect-video md:aspect-[21/9] overflow-hidden md:rounded-xl md:mt-6 md:px-8">
+        <div className="w-full aspect-video md:aspect-[21/9] overflow-hidden md:rounded-xl">
           <img 
             src={event.imageUrl} 
             alt={event.name}
@@ -58,7 +33,7 @@ export function EventDetailPage({ eventId, onBack, onPurchase }: EventDetailPage
           />
         </div>
 
-        <div className="px-4 md:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           {/* Left Column: Content */}
           <div className="lg:col-span-8 space-y-10">
             <section>

@@ -38,20 +38,7 @@ export function QRDisplayPage({ ticketId, onBack }: QRDisplayPageProps) {
   const isFreighter = wallet.walletType === 'freighter';
 
   return (
-    <div className="bg-black min-h-screen text-[#e6e0ee] flex flex-col">
-      {/* Top Navigation */}
-      <header className="flex justify-between items-center px-6 h-16 w-full fixed top-0 z-50">
-        <button
-          onClick={onBack}
-          className="flex items-center justify-center p-2 active:scale-95 transition-transform"
-        >
-          <span className="material-symbols-outlined text-[#e6e0ee]">arrow_back</span>
-        </button>
-        <h1 className="text-xl font-semibold tracking-tight uppercase truncate max-w-[200px]">
-          TICKET: {ticketId.substring(0, 8)}...
-        </h1>
-        <div className="w-10" />
-      </header>
+    <div className="bg-black min-h-screen text-[#e6e0ee] flex flex-col pt-16">
 
       {/* Main QR Content */}
       <main className="flex-grow flex flex-col items-center justify-center px-6 pt-16 pb-32">

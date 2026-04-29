@@ -29,6 +29,7 @@ export interface Ticket {
   eventId: string;
   owner: string;
   status: TicketStatus;   // D-018: three-state enum, not a bool
+  purchasedAt?: string;   // ISO string from Supabase
 }
 
 export interface WalletState {
@@ -51,5 +52,7 @@ export const xlmToStroops = (xlm: number): bigint => BigInt(Math.floor(xlm * 10_
 export const stroopsToXlm = (s: number) => (s / 10_000_000).toFixed(2);
 export const formatEventDate = (unix: number) =>
   new Date(unix * 1000).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+export const formatDateTime = (iso?: string) => 
+  iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
 export const truncateKey = (k: string) => `${k.slice(0, 4)}...${k.slice(-4)}`;
 

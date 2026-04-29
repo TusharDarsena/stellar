@@ -84,7 +84,7 @@ export function OrganizerEventRow({
           <div className="flex justify-between items-end mb-1">
             <span className="text-[#c9c4d8] text-sm">Sales Progress</span>
             <span className="text-[#EAEFF4] text-sm">
-              {ticketsSold} / {event.capacity.toLocaleString()} ({soldPercent}%)
+              {ticketsSold} / {(event.capacity ?? 0).toLocaleString()} ({soldPercent}%)
             </span>
           </div>
           <div className="w-full bg-[#272C33] h-1.5 rounded-full overflow-hidden">

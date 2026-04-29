@@ -36,6 +36,7 @@ export function useTickets(): {
         eventId: row.event_id,
         owner: row.owner_address,
         status: row.status as TicketStatus,
+        purchasedAt: row.purchased_at,
       }));
 
       setTickets(resolved);

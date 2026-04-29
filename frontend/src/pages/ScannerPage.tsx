@@ -101,35 +101,7 @@ export function ScannerPage({ onBack, invalidateTickets }: ScannerPageProps) {
   const DEV_MODE = import.meta.env.DEV;
 
   return (
-    <div className="bg-black text-[#e6e0ee] font-sans overflow-hidden h-screen flex flex-col">
-      {/* TopAppBar */}
-      <header className="flex justify-between items-center px-6 py-4 w-full sticky top-0 z-50 bg-[#15181C] border-b border-[#272C33]">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={onBack}
-            className="p-2 hover:bg-[#272C33]/50 transition-colors duration-200 rounded-full flex items-center justify-center"
-          >
-            <span className="material-symbols-outlined text-[#e6e0ee]">arrow_back</span>
-          </button>
-          <h1 className="text-xl font-bold tracking-tighter text-[#e6e0ee]">StellarTickets</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1 bg-[#36333e] rounded-full border border-[#484555]">
-            <span className="material-symbols-outlined text-[#7C5CFF] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>circle</span>
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              {wallet.isConnected ? 'Live Session' : 'Offline'}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#e6e0ee]/60">account_circle</span>
-            {wallet.isConnected && (
-              <span className="text-[10px] font-mono text-[#7C5CFF]">
-                {wallet.publicKey?.substring(0, 4)}...{wallet.publicKey?.substring(wallet.publicKey.length - 4)}
-              </span>
-            )}
-          </div>
-        </div>
-      </header>
+    <div className="bg-black text-[#e6e0ee] font-sans overflow-hidden h-screen flex flex-col pt-24">
 
       {/* Main Viewport */}
       <main className="flex-grow relative flex flex-col overflow-hidden bg-black">

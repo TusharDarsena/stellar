@@ -7,7 +7,7 @@ export interface LandingPageProps {
 
 export function LandingPage({ onSelectRole }: LandingPageProps) {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 relative bg-background text-on-surface overflow-x-hidden">
+    <main className="min-h-screen flex flex-col items-center justify-center px-4 md:px-8 max-w-7xl mx-auto relative bg-background text-on-surface overflow-x-hidden">
       {/* Abstract Background Element */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-primary opacity-5 blur-[120px]"></div>

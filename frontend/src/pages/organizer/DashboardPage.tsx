@@ -27,8 +27,8 @@ export function DashboardPage({ events, onCreateEvent, onScanTickets, invalidate
   const activeEvents = organizerEvents.filter(e => e.status === 'Active');
 
   const totalEvents = organizerEvents.length;
-  const totalTicketsSold = organizerEvents.reduce((s, event) => s + event.currentSupply, 0);
-  const totalEscrow = activeEvents.reduce((s, event) => s + (event.currentSupply * (event.pricePerTicket / 10_000_000)), 0);
+  const totalTicketsSold = organizerEvents.reduce((s, event) => s + (event.currentSupply ?? 0), 0);
+  const totalEscrow = activeEvents.reduce((s, event) => s + ((event.currentSupply ?? 0) * ((event.pricePerTicket ?? 0) / 10_000_000)), 0);
 
   const handleRelease = async (eventId: string) => {
     if (!wallet.isConnected || !wallet.publicKey || !wallet.signFn) return;
@@ -86,56 +86,32 @@ export function DashboardPage({ events, onCreateEvent, onScanTickets, invalidate
   }
 
   return (
-    <div className="bg-[#14121b] text-[#e6e0ee] min-h-screen">
-      {/* TopAppBar */}
-      <header className="flex justify-between items-center px-6 py-4 w-full sticky top-0 z-50 bg-[#15181C] border-b border-[#272C33]">
-        <div className="flex items-center gap-4">
-          <span className="text-xl font-bold tracking-tighter text-[#EAEFF4]">Dashboard</span>
-        </div>
-        <nav className="hidden md:flex gap-8">
-          <span className="text-[#7C5CFF] border-b-2 border-[#7C5CFF] pb-2 text-xs font-semibold tracking-wider">
-            Dashboard
-          </span>
-          <button className="text-[#EAEFF4]/60 hover:text-[#EAEFF4] transition-colors text-xs font-semibold tracking-wider">
-            Events
-          </button>
-          <button className="text-[#EAEFF4]/60 hover:text-[#EAEFF4] transition-colors text-xs font-semibold tracking-wider">
-            Finances
-          </button>
-        </nav>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onScanTickets}
-            title="Scan Tickets"
-            className="p-2 rounded-full hover:bg-[#272C33] transition-colors text-[#EAEFF4]/60 hover:text-[#EAEFF4]"
-          >
-            <span className="material-symbols-outlined">qr_code_scanner</span>
-          </button>
-          <span className="material-symbols-outlined text-[#EAEFF4]/60 cursor-pointer">
-            notifications
-          </span>
-          <span className="material-symbols-outlined text-[#EAEFF4]/60 cursor-pointer">
-            account_circle
-          </span>
-        </div>
-      </header>
-
-      <main className="max-w-[1280px] mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 sm:pb-32">
+    <div className="bg-[#14121b] text-[#e6e0ee] min-h-screen pt-16">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-10 sm:py-12 pb-24 sm:pb-32">
         {/* Header Actions */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-16">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-16">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-[#e6e0ee] tracking-tight">Organizer Hub</h1>
             <p className="text-base text-[#c9c4d8] mt-1">
               Manage your stellar event inventory and settlements.
             </p>
           </div>
-          <button
-            onClick={onCreateEvent}
-            className="bg-[#7C5CFF] text-[#EAEFF4] px-6 py-3 rounded-lg text-xs font-bold flex items-center gap-2 hover:brightness-110 transition-all shadow-[0_0_20px_rgba(124,92,255,0.2)]"
-          >
-            <span className="material-symbols-outlined">add_circle</span>
-            Create Event
-          </button>
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <button
+              onClick={onScanTickets}
+              className="flex-1 md:flex-none border border-[#272C33] text-[#e6e0ee] px-6 py-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-[#272C33] transition-all"
+            >
+              <span className="material-symbols-outlined">qr_code_scanner</span>
+              Scan Tickets
+            </button>
+            <button
+              onClick={onCreateEvent}
+              className="flex-1 md:flex-none bg-[#7C5CFF] text-[#EAEFF4] px-6 py-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-[0_0_20px_rgba(124,92,255,0.2)]"
+            >
+              <span className="material-symbols-outlined">add_circle</span>
+              Create Event
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}

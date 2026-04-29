@@ -110,40 +110,9 @@ export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
   const labelClass = 'block text-xs font-semibold text-[#c9c4d8] uppercase tracking-widest mb-2';
 
   return (
-    <div className="bg-[#14121b] text-[#e6e0ee] min-h-screen">
-      {/* Top Navigation */}
-      <header className="flex justify-between items-center px-6 py-4 w-full sticky top-0 z-50 bg-[#15181C] border-b border-[#272C33]">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#272C33]/50 transition-colors duration-200 text-[#EAEFF4]/60 hover:text-[#EAEFF4]"
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </button>
-          <h1 className="text-xl font-bold tracking-tighter text-[#EAEFF4]">Create Event</h1>
-        </div>
-        <nav className="hidden md:flex items-center gap-8">
-          <button
-            onClick={onBack}
-            className="text-[#EAEFF4]/60 hover:text-[#EAEFF4] text-xs font-semibold tracking-wider transition-colors"
-          >
-            Dashboard
-          </button>
-          <span className="text-[#7C5CFF] border-b-2 border-[#7C5CFF] pb-1 text-xs font-semibold tracking-wider">
-            Events
-          </span>
-        </nav>
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-[#EAEFF4]/60 cursor-pointer hover:text-[#EAEFF4]">
-            notifications
-          </span>
-          <span className="material-symbols-outlined text-[#EAEFF4]/60 cursor-pointer hover:text-[#EAEFF4]">
-            account_circle
-          </span>
-        </div>
-      </header>
+    <div className="bg-[#14121b] text-[#e6e0ee] min-h-screen pt-16">
 
-      <main className="max-w-[1280px] mx-auto px-6 py-16">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           {/* ── Form ── */}
           <section className="lg:col-span-7 space-y-10">

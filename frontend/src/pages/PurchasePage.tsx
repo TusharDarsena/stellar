@@ -69,28 +69,8 @@ export function PurchasePage({ eventId, events, onBack, onPurchaseComplete, inva
 
   return (
     <div className="bg-[#0E1113] min-h-screen text-[#EAEFF4]">
-      {/* TopNavBar */}
-      <header className="fixed top-0 w-full z-50 bg-[#15181C]/90 backdrop-blur-md border-b border-[#272C33] shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-        <div className="flex justify-between items-center h-16 px-4 md:px-8 max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-2 hover:bg-[#272C33] rounded-full transition-colors">
-              <span className="material-symbols-outlined text-white">arrow_back</span>
-            </button>
-            <h1 className="text-xl font-bold tracking-tighter">Buy Tickets</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-slate-400">notifications</span>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#272C33] rounded-full border border-[#7C5CFF]/30">
-              <span className="material-symbols-outlined text-[#7C5CFF] text-sm">account_balance_wallet</span>
-              <span className="font-mono text-xs text-slate-50">
-                {wallet.isConnected ? `${wallet.publicKey?.substring(0, 4)}...${wallet.publicKey?.substring(wallet.publicKey.length - 4)}` : 'Disconnected'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
 
-      <main className="pt-24 pb-32 px-4 max-w-3xl mx-auto">
+      <main className="pt-24 pb-32 px-4 md:px-8 max-w-7xl mx-auto">
         {/* Progress Indicator */}
         <div className="flex items-center justify-between mb-8 px-2">
           <div className="flex flex-col items-center gap-2">
