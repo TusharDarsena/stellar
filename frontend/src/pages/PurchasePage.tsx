@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Event, stroopsToXlm, formatEventDate } from '../types';
 import { Button } from '../components/ui/Button';
 import { useAppStore } from '../store/useAppStore';
 import { purchaseTicket } from '../lib/soroban';
 import { generateID } from '../lib/utils';
 
-import { useEvents } from '../hooks/useEvents';
 import { useWallet } from '../hooks/useWallet';
 import { useXlmPrice } from '../hooks/useXlmPrice';
 
@@ -13,14 +12,14 @@ import { supabase } from '../lib/supabase';
 
 interface PurchasePageProps {
   eventId: string;
+  events: Event[];
   onBack: () => void;
   onPurchaseComplete: (ticketId: string) => void;
   invalidateEvents: () => Promise<void>;
   invalidateTickets: () => void;
 }
 
-export function PurchasePage({ eventId, onBack, onPurchaseComplete, invalidateEvents, invalidateTickets }: PurchasePageProps) {
-  const { events, loading, error } = useEvents();
+export function PurchasePage({ eventId, events, onBack, onPurchaseComplete, invalidateEvents, invalidateTickets }: PurchasePageProps) {
   const event = events.find(e => e.eventId === eventId);
 
   const quantity = 1;
@@ -31,8 +30,6 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete, invalidateEv
   const totalPrice = priceXlm * quantity;
   const totalUsd = usdPerXlm ? totalPrice * usdPerXlm : null;
 
-  if (loading) return <div className="p-20 text-center text-slate-400">Loading...</div>;
-  if (error) return <div className="p-20 text-center text-red-500">{error}</div>;
   if (!event) return <div className="p-20 text-center text-slate-400">Event not found</div>;
 
   const handlePurchase = async () => {
@@ -40,8 +37,6 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete, invalidateEv
 
     setTxState({ status: 'building' });
     try {
-      // Each on-chain ticket is a separate NFT — generate a unique ID for this purchase.
-      // For quantity > 1 this would loop, but MVP keeps it at 1 per tx for simplicity.
       const ticketId = generateID();
       await purchaseTicket(event.eventId, wallet.publicKey, ticketId, wallet.signFn);
       
@@ -52,10 +47,8 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete, invalidateEv
         owner_address: wallet.publicKey,
         status: 'Active',
       });
-      await supabase.rpc('increment_event_supply', { row_id: event.eventId }); // Wait, RPC? We don't have an RPC for increment. We can just update it using the known supply + 1. 
-      // Actually, doing currentSupply + 1 is fine since we have it, or let's use an increment if possible, but PG doesn't have simple + 1 without RPC or raw sql.
-      // Let's just do `event.currentSupply + 1` for MVP.
-      await supabase.from('events').update({ current_supply: event.currentSupply + 1 }).eq('event_id', event.eventId);
+      // Use atomic RPC for concurrent purchase safety
+      await supabase.rpc('increment_event_supply', { row_id: event.eventId });
       
       await invalidateEvents();
       invalidateTickets();

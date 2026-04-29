@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Event, EventStatus, formatEventDate } from '../../types';
 
 interface OrganizerEventRowProps {
@@ -42,6 +42,7 @@ export function OrganizerEventRow({
   onRelease,
   onCancel,
 }: OrganizerEventRowProps) {
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const soldPercent = event.capacity > 0
     ? Math.round((ticketsSold / event.capacity) * 100)
     : 0;
@@ -125,16 +126,36 @@ export function OrganizerEventRow({
         )}
         
         {event.status === 'Active' && onCancel && (
-          <button
-            onClick={() => {
-              if (confirm('This will cancel the event and allow all attendees to claim refunds. This action cannot be undone.')) {
-                onCancel(event.eventId);
-              }
-            }}
-            className="w-full mt-2 border border-red-500/30 text-red-400 py-2 rounded-lg text-xs font-bold hover:bg-red-500/10 transition-colors"
-          >
-            Cancel Event
-          </button>
+          <>
+            {showCancelConfirm ? (
+              <div className="w-full mt-2 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                <p className="text-xs text-red-400 mb-3 text-center leading-relaxed">
+                  This will cancel the event and allow all attendees to claim refunds. This cannot be undone.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowCancelConfirm(false)}
+                    className="flex-1 py-2 bg-[#272C33] text-white rounded-lg text-xs font-bold hover:bg-white/10 transition-colors"
+                  >
+                    Go Back
+                  </button>
+                  <button
+                    onClick={() => { setShowCancelConfirm(false); onCancel(event.eventId); }}
+                    className="flex-1 py-2 bg-red-500 text-white rounded-lg text-xs font-bold hover:opacity-90 transition-opacity"
+                  >
+                    Confirm Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowCancelConfirm(true)}
+                className="w-full mt-2 border border-red-500/30 text-red-400 py-2 rounded-lg text-xs font-bold hover:bg-red-500/10 transition-colors"
+              >
+                Cancel Event
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

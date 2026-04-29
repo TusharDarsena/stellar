@@ -50,6 +50,10 @@ CREATE TABLE IF NOT EXISTS public.app_cache (
 -- and authenticated/anon writes from the frontend. We will enable permissive 
 -- rules to prevent frontend breakage, but in production you'd lock this down.
 
+-- WARNING: These policies are deliberately open (true) for the MVP phase
+-- to allow the frontend to sync state. In a production environment, 
+-- these MUST be restricted (e.g., verifying user identity or using Edge Functions 
+-- to validate the corresponding on-chain Soroban transactions).
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable read access for all users on events" ON public.events FOR SELECT USING (true);
 CREATE POLICY "Enable insert access for all users on events" ON public.events FOR INSERT WITH CHECK (true);
@@ -73,3 +77,14 @@ CREATE POLICY "Enable update access for all users on user_profiles" ON public.us
 ALTER TABLE public.app_cache ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable read access for all users on app_cache" ON public.app_cache FOR SELECT USING (true);
 -- Note: app_cache insert/update should ideally be limited to service_role (Edge Functions)
+
+-- 7. Atomic RPC Functions
+-- Used to safely increment event supply during concurrent purchases
+CREATE OR REPLACE FUNCTION increment_event_supply(row_id text)
+RETURNS void
+LANGUAGE sql
+AS $$
+  UPDATE public.events 
+  SET current_supply = current_supply + 1 
+  WHERE event_id = row_id;
+$$;

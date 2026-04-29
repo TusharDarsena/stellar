@@ -110,6 +110,7 @@ function App() {
         return selectedEventId ? (
           <PurchasePage
             eventId={selectedEventId}
+            events={events}
             onBack={() => setCurrentView('event-detail')}
             onPurchaseComplete={handlePurchaseComplete}
             invalidateEvents={invalidateEvents}
@@ -121,6 +122,10 @@ function App() {
       case 'my-tickets':
         return (
           <MyTicketsPage
+            tickets={tickets}
+            events={events}
+            loadingTickets={loadingTickets}
+            errorTickets={errorTickets}
             onShowQR={handleShowQR}
             onBrowseMore={() => setCurrentView('browse')}
             invalidateTickets={invalidateTickets}
@@ -141,6 +146,7 @@ function App() {
       case 'organizer-dashboard':
         return (
           <DashboardPage
+            events={events}
             onCreateEvent={() => setCurrentView('organizer-create')}
             onScanTickets={() => setCurrentView('scanner')}
             invalidateEvents={invalidateEvents}

@@ -3,6 +3,7 @@ import { Event, formatEventDate } from '../../types';
 import { OrganizerEventRow } from '../../components/organizer/OrganizerEventRow';
 
 interface DashboardPageProps {
+  readonly events: Event[];
   readonly onCreateEvent: () => void;
   readonly onScanTickets: () => void;
   readonly invalidateEvents: () => Promise<void>;
@@ -15,8 +16,7 @@ import { releaseFunds, cancelEvent } from '../../lib/soroban';
 import { upsertEventMetadata } from '../../lib/supabase'; // We'll just use a raw supabase query, wait, no, `upsertEventMetadata` handles events. But it's an update, let's import supabase.
 import { supabase } from '../../lib/supabase';
 
-export function DashboardPage({ onCreateEvent, onScanTickets, invalidateEvents }: DashboardPageProps) {
-  const { events } = useEvents();
+export function DashboardPage({ events, onCreateEvent, onScanTickets, invalidateEvents }: DashboardPageProps) {
   const { wallet, setTxState } = useAppStore();
   const { connectOrganizer } = useWallet();
 
