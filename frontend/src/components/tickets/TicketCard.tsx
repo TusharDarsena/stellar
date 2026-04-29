@@ -5,9 +5,13 @@ interface TicketCardProps {
   ticket: Ticket;
   event: Event;
   onShowQR: (ticketId: string) => void;
+  onRefund?: (ticketId: string) => void;
+  onListForSale?: (ticketId: string) => void;
+  onCancelListing?: (ticketId: string) => void;
+  hasOpenListing?: boolean;
 }
 
-export function TicketCard({ ticket, event, onShowQR }: TicketCardProps) {
+export function TicketCard({ ticket, event, onShowQR, onRefund, onListForSale, onCancelListing, hasOpenListing }: TicketCardProps) {
   return (
     <div className="bg-[#15181C] border border-[#272C33] rounded-xl overflow-hidden relative group hover:border-[#7C5CFF]/50 transition-all duration-300">
       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#7C5CFF]"></div>
@@ -15,7 +19,7 @@ export function TicketCard({ ticket, event, onShowQR }: TicketCardProps) {
         <div className="flex justify-between items-start mb-6">
           <div>
             <span className="bg-[#7C5CFF]/10 text-[#7C5CFF] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-2 inline-block">
-              {ticket.status !== 'Active' ? 'USED' : 'VIP ACCESS'}
+              {ticket.status === 'Used' ? 'USED' : ticket.status === 'Refunded' ? 'REFUNDED' : event.status === 'Cancelled' ? 'CANCELLED EVENT' : 'VIP ACCESS'}
             </span>
             <h3 className="text-2xl font-semibold leading-tight text-white">{event.name}</h3>
           </div>
@@ -42,14 +46,45 @@ export function TicketCard({ ticket, event, onShowQR }: TicketCardProps) {
           </p>
         </div>
         
-        <button 
-          onClick={() => onShowQR(ticket.ticketId)}
-          disabled={ticket.status !== 'Active'}
-          className="w-full py-3 bg-[#7C5CFF] text-[#EAEFF4] font-semibold text-xs rounded-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>qr_code_2</span>
-          {ticket.status !== 'Active' ? 'TICKET USED' : 'SHOW QR'}
-        </button>
+        <div className="flex flex-col gap-2">
+          {hasOpenListing && onCancelListing ? (
+            <button 
+              onClick={() => onCancelListing(ticket.ticketId)}
+              className="w-full py-3 bg-[#272C33] text-[#ffb4ab] font-semibold text-xs rounded-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[20px]">cancel</span>
+              CANCEL LISTING
+            </button>
+          ) : event.status === 'Cancelled' && onRefund ? (
+            <button 
+              onClick={() => onRefund(ticket.ticketId)}
+              className="w-full py-3 bg-[#ffb4ab] text-[#690005] font-semibold text-xs rounded-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>money_off</span>
+              CLAIM REFUND
+            </button>
+          ) : (
+            <>
+              <button 
+                onClick={() => onShowQR(ticket.ticketId)}
+                disabled={ticket.status !== 'Active'}
+                className="w-full py-3 bg-[#7C5CFF] text-[#EAEFF4] font-semibold text-xs rounded-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>qr_code_2</span>
+                {ticket.status !== 'Active' ? 'TICKET USED' : 'SHOW QR'}
+              </button>
+              {ticket.status === 'Active' && onListForSale && event.status !== 'Cancelled' && (
+                <button 
+                  onClick={() => onListForSale(ticket.ticketId)}
+                  className="w-full py-3 bg-transparent border border-[#7C5CFF]/30 text-[#7C5CFF] font-semibold text-xs rounded-lg hover:bg-[#7C5CFF]/10 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-[20px]">storefront</span>
+                  LIST FOR SALE
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

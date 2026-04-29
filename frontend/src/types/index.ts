@@ -2,7 +2,7 @@ export type TicketStatus = 'Active' | 'Used' | 'Refunded';
 export type EventStatus = 'Active' | 'Cancelled' | 'Completed';
 export type WalletType = 'freighter' | 'burner';  // D-028: burner replaces web3auth for MVP
 export type TxStatus = 'idle' | 'building' | 'signing' | 'submitting' | 'success' | 'error';
-export type AppView = 'landing' | 'browse' | 'event-detail' | 'purchase' | 'my-tickets' | 'qr-display' | 'organizer-dashboard' | 'organizer-create' | 'scanner';
+export type AppView = 'landing' | 'browse' | 'event-detail' | 'purchase' | 'my-tickets' | 'qr-display' | 'organizer-dashboard' | 'organizer-create' | 'scanner' | 'marketplace';
 
 // Abstraction so soroban.ts doesn't care whether the user is on Freighter or Burner. (D-007 revised)
 // Freighter: wraps signTransaction from @stellar/freighter-api

@@ -8,6 +8,7 @@ interface OrganizerEventRowProps {
   readonly canRelease: boolean;
   readonly lockedUntilLabel?: string;
   readonly onRelease: (eventId: string) => void;
+  readonly onCancel?: (eventId: string) => void;
 }
 
 function StatusBadge({ status }: { status: EventStatus }) {
@@ -39,6 +40,7 @@ export function OrganizerEventRow({
   canRelease,
   lockedUntilLabel,
   onRelease,
+  onCancel,
 }: OrganizerEventRowProps) {
   const soldPercent = event.capacity > 0
     ? Math.round((ticketsSold / event.capacity) * 100)
@@ -119,6 +121,19 @@ export function OrganizerEventRow({
           >
             <span className="material-symbols-outlined text-sm">lock</span>
             {lockedUntilLabel ?? 'Locked'}
+          </button>
+        )}
+        
+        {event.status === 'Active' && onCancel && (
+          <button
+            onClick={() => {
+              if (confirm('This will cancel the event and allow all attendees to claim refunds. This action cannot be undone.')) {
+                onCancel(event.eventId);
+              }
+            }}
+            className="w-full mt-2 border border-red-500/30 text-red-400 py-2 rounded-lg text-xs font-bold hover:bg-red-500/10 transition-colors"
+          >
+            Cancel Event
           </button>
         )}
       </div>

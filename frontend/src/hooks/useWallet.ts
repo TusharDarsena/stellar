@@ -17,6 +17,7 @@ import {
   fetchXlmBalance,
   buildBurnerSignFn,
 } from '../lib/stellar';
+import { supabase } from '../lib/supabase';
 
 export function useWallet() {
   const { wallet, setWallet } = useAppStore();
@@ -68,6 +69,15 @@ export function useWallet() {
 
       // Fund the account if it doesn't exist yet (Friendbot is idempotent for existing accounts)
       await fundWithFriendbot(publicKey);
+
+      // Phase 2a: Generate a mock user profile since we defer Web3Auth to Phase 2b
+      await supabase.from('user_profiles').upsert({
+        wallet_address: publicKey,
+        display_name: 'Test Attendee ' + publicKey.substring(0, 4),
+        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${publicKey}`,
+      }, { onConflict: 'wallet_address' }).then(({ error }) => {
+        if (error) console.warn('Failed to upsert mock profile:', error);
+      });
 
       const signFn = buildBurnerSignFn(secretKey);
       const xlmBalance = await fetchXlmBalance(publicKey);

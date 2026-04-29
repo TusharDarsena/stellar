@@ -5,14 +5,17 @@ import { OrganizerEventRow } from '../../components/organizer/OrganizerEventRow'
 interface DashboardPageProps {
   readonly onCreateEvent: () => void;
   readonly onScanTickets: () => void;
+  readonly invalidateEvents: () => Promise<void>;
 }
 
 import { useEvents } from '../../hooks/useEvents';
 import { useAppStore } from '../../store/useAppStore';
 import { useWallet } from '../../hooks/useWallet';
-import { releaseFunds } from '../../lib/soroban';
+import { releaseFunds, cancelEvent } from '../../lib/soroban';
+import { upsertEventMetadata } from '../../lib/supabase'; // We'll just use a raw supabase query, wait, no, `upsertEventMetadata` handles events. But it's an update, let's import supabase.
+import { supabase } from '../../lib/supabase';
 
-export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPageProps) {
+export function DashboardPage({ onCreateEvent, onScanTickets, invalidateEvents }: DashboardPageProps) {
   const { events } = useEvents();
   const { wallet, setTxState } = useAppStore();
   const { connectOrganizer } = useWallet();
@@ -21,20 +24,46 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
     ? events.filter(e => e.organizer === wallet.publicKey)
     : [];
 
+  const activeEvents = organizerEvents.filter(e => e.status === 'Active');
+
   const totalEvents = organizerEvents.length;
   const totalTicketsSold = organizerEvents.reduce((s, event) => s + event.currentSupply, 0);
-  const totalEscrow = organizerEvents.reduce((s, event) => s + (event.currentSupply * (event.pricePerTicket / 10_000_000)), 0);
+  const totalEscrow = activeEvents.reduce((s, event) => s + (event.currentSupply * (event.pricePerTicket / 10_000_000)), 0);
 
   const handleRelease = async (eventId: string) => {
     if (!wallet.isConnected || !wallet.publicKey || !wallet.signFn) return;
     setTxState({ status: 'signing' });
     try {
       await releaseFunds(eventId, wallet.publicKey, wallet.signFn);
+      
+      // Update Supabase mirror
+      await supabase.from('events').update({ status: 'Completed' }).eq('event_id', eventId);
+      await invalidateEvents();
+
       setTxState({ status: 'success', hash: 'Funds released successfully!' });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     } catch (e: any) {
       console.error('Release funds failed', e);
       setTxState({ status: 'error', errorMessage: e.message || 'Failed to release funds' });
+      setTimeout(() => setTxState({ status: 'idle' }), 3000);
+    }
+  };
+
+  const handleCancel = async (eventId: string) => {
+    if (!wallet.isConnected || !wallet.publicKey || !wallet.signFn) return;
+    setTxState({ status: 'signing' });
+    try {
+      await cancelEvent(eventId, wallet.publicKey, wallet.signFn);
+      
+      // Update Supabase mirror
+      await supabase.from('events').update({ status: 'Cancelled' }).eq('event_id', eventId);
+      await invalidateEvents();
+
+      setTxState({ status: 'success', hash: 'Event cancelled successfully.' });
+      setTimeout(() => setTxState({ status: 'idle' }), 3000);
+    } catch (e: any) {
+      console.error('Cancel event failed', e);
+      setTxState({ status: 'error', errorMessage: e.message || 'Failed to cancel event' });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     }
   };
@@ -170,9 +199,9 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
 
           {organizerEvents.map((event) => {
             const ticketsSold = event.currentSupply;
-            const escrowXlm = ticketsSold * (event.pricePerTicket / 10_000_000);
-            const canRelease = event.status === 'Completed';
-            const lockedUntilLabel = canRelease ? undefined : `Locked Until ${new Date(event.dateUnix * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            const escrowXlm = event.status === 'Active' ? ticketsSold * (event.pricePerTicket / 10_000_000) : 0;
+            const canRelease = event.status === 'Active' && event.dateUnix * 1000 < Date.now();
+            const lockedUntilLabel = canRelease || event.status === 'Completed' || event.status === 'Cancelled' ? undefined : `Locked Until ${new Date(event.dateUnix * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 
             return (
               <OrganizerEventRow
@@ -183,6 +212,7 @@ export function DashboardPage({ onCreateEvent, onScanTickets }: DashboardPagePro
                 canRelease={canRelease}
                 lockedUntilLabel={lockedUntilLabel}
                 onRelease={handleRelease}
+                onCancel={handleCancel}
               />
             );
           })}

@@ -4,13 +4,17 @@ import { useAppStore } from '../store/useAppStore';
 import { verifyQRPayload } from '../lib/qr';
 import { getTicket, markUsed } from '../lib/soroban';
 
+import { supabase } from '../lib/supabase';
+
 interface ScannerPageProps {
   onBack: () => void;
+  invalidateTickets: () => void;
 }
 
-export function ScannerPage({ onBack }: ScannerPageProps) {
+export function ScannerPage({ onBack, invalidateTickets }: ScannerPageProps) {
   const [scanResult, setScanResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [scanDetails, setScanDetails] = useState<{ ticketId: string; walletAddress: string } | null>(null);
+  const [attendeeProfile, setAttendeeProfile] = useState<{ displayName: string; avatarUrl: string } | null>(null);
   const { wallet } = useAppStore();
   const scannerRef = React.useRef<Html5Qrcode | null>(null);
 
@@ -35,12 +39,30 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
       return;
     }
 
-    // Step 3: Mark ticket as used on-chain. Requires organizer wallet. (D-005)
+    // Step 3: Fetch Attendee Profile from Supabase
+    const { data: profileData } = await supabase
+      .from('user_profiles')
+      .select('display_name, avatar_url')
+      .eq('wallet_address', parsed.walletAddress)
+      .maybeSingle();
+
+    if (profileData) {
+      setAttendeeProfile({
+        displayName: profileData.display_name || 'Anonymous Attendee',
+        avatarUrl: profileData.avatar_url || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
+      });
+    } else {
+      setAttendeeProfile(null);
+    }
+
+    // Step 4: Mark ticket as used on-chain. Requires organizer wallet. (D-005)
     setScanDetails(parsed);
     setScanResult('success');
     if (wallet.publicKey && wallet.signFn) {
       try {
         await markUsed(parsed.ticketId, wallet.publicKey, wallet.signFn);
+        await supabase.from('tickets').update({ status: 'Used' }).eq('ticket_id', parsed.ticketId);
+        invalidateTickets();
       } catch (err) {
         // markUsed failed (e.g. already used by race condition) — still show success UI
         // since the local verify + chain read already confirmed validity.
@@ -195,21 +217,23 @@ export function ScannerPage({ onBack }: ScannerPageProps) {
               <div className="p-8 space-y-6">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#484555]">
-                    <img className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" alt="Attendee" />
+                    <img className="w-full h-full object-cover" src={attendeeProfile?.avatarUrl ?? "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80"} alt="Attendee" />
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-[#7C5CFF] uppercase">VIP Attendee</p>
-                    <h3 className="text-xl font-bold text-white">Marcus Sterling</h3>
+                  <div className="text-left">
+                    <p className="text-xs font-semibold text-[#7C5CFF] uppercase">Attendee</p>
+                    <h3 className="text-xl font-bold text-white">
+                      {attendeeProfile?.displayName ?? `${scanDetails?.walletAddress.slice(0,6)}...${scanDetails?.walletAddress.slice(-4)}`}
+                    </h3>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#2b2933] p-4 rounded-lg border border-[#484555]">
+                  <div className="bg-[#2b2933] p-4 rounded-lg border border-[#484555] text-left">
                     <p className="text-xs font-semibold text-[#c9c4d8] mb-1">TICKET TYPE</p>
-                    <p className="text-base font-bold text-white">Galaxy Pass</p>
+                    <p className="text-base font-bold text-white">General Admission</p>
                   </div>
-                  <div className="bg-[#2b2933] p-4 rounded-lg border border-[#484555]">
+                  <div className="bg-[#2b2933] p-4 rounded-lg border border-[#484555] text-left">
                     <p className="text-xs font-semibold text-[#c9c4d8] mb-1">SEAT / SECTION</p>
-                    <p className="text-base font-bold text-white">Level 2 | A42</p>
+                    <p className="text-base font-bold text-white">Anywhere</p>
                   </div>
                 </div>
                 <div className="space-y-2">

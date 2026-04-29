@@ -15,6 +15,12 @@ import { TxOverlay } from './components/ui/TxOverlay';
 import { useAppStore } from './store/useAppStore';
 import { useWallet } from './hooks/useWallet';
 
+import { useEvents } from './hooks/useEvents';
+import { useTickets } from './hooks/useTickets';
+
+import { useListings } from './hooks/useListings';
+import { MarketplacePage } from './pages/MarketplacePage';
+
 function App() {
   const [currentView, setCurrentView] = useState<AppView>('landing');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -22,6 +28,10 @@ function App() {
 
   const { txState, wallet, _hasHydrated } = useAppStore();
   const { connectOrganizer, connectAttendee, disconnectWallet } = useWallet();
+
+  const { events, loading: loadingEvents, error: errorEvents, invalidate: invalidateEvents } = useEvents();
+  const { tickets, loading: loadingTickets, error: errorTickets, invalidate: invalidateTickets } = useTickets();
+  const { listings, loading: loadingListings, error: errorListings, invalidate: invalidateListings } = useListings();
 
   // Auto-route connected users after a refresh
   useEffect(() => {
@@ -85,7 +95,7 @@ function App() {
       case 'landing':
         return <LandingPage onSelectRole={handleSelectRole} />;
       case 'browse':
-        return <BrowsePage onEventClick={handleEventClick} />;
+        return <BrowsePage events={events} loading={loadingEvents} error={errorEvents} onEventClick={handleEventClick} />;
       case 'event-detail':
         return selectedEventId ? (
           <EventDetailPage
@@ -94,7 +104,7 @@ function App() {
             onPurchase={handlePurchaseInit}
           />
         ) : (
-          <BrowsePage onEventClick={handleEventClick} />
+          <BrowsePage events={events} loading={loadingEvents} error={errorEvents} onEventClick={handleEventClick} />
         );
       case 'purchase':
         return selectedEventId ? (
@@ -102,15 +112,19 @@ function App() {
             eventId={selectedEventId}
             onBack={() => setCurrentView('event-detail')}
             onPurchaseComplete={handlePurchaseComplete}
+            invalidateEvents={invalidateEvents}
+            invalidateTickets={invalidateTickets}
           />
         ) : (
-          <BrowsePage onEventClick={handleEventClick} />
+          <BrowsePage events={events} loading={loadingEvents} error={errorEvents} onEventClick={handleEventClick} />
         );
       case 'my-tickets':
         return (
           <MyTicketsPage
             onShowQR={handleShowQR}
             onBrowseMore={() => setCurrentView('browse')}
+            invalidateTickets={invalidateTickets}
+            invalidateEvents={invalidateEvents}
           />
         );
       case 'qr-display':
@@ -120,22 +134,36 @@ function App() {
             onBack={() => { setSelectedTicketId(null); setCurrentView('my-tickets'); }}
           />
         ) : (
-          <MyTicketsPage onShowQR={handleShowQR} onBrowseMore={() => setCurrentView('browse')} />
+          <MyTicketsPage onShowQR={handleShowQR} onBrowseMore={() => setCurrentView('browse')} invalidateTickets={invalidateTickets} invalidateEvents={invalidateEvents} />
         );
       case 'scanner':
-        return <ScannerPage onBack={() => setCurrentView('organizer-dashboard')} />;
+        return <ScannerPage onBack={() => setCurrentView('organizer-dashboard')} invalidateTickets={invalidateTickets} />;
       case 'organizer-dashboard':
         return (
           <DashboardPage
             onCreateEvent={() => setCurrentView('organizer-create')}
             onScanTickets={() => setCurrentView('scanner')}
+            invalidateEvents={invalidateEvents}
+          />
+        );
+      case 'marketplace':
+        return (
+          <MarketplacePage
+            listings={listings}
+            loading={loadingListings}
+            error={errorListings}
+            invalidateListings={invalidateListings}
+            invalidateTickets={invalidateTickets}
           />
         );
       case 'organizer-create':
         return (
           <CreateEventPage
             onBack={() => setCurrentView('organizer-dashboard')}
-            onSubmit={() => setCurrentView('organizer-dashboard')}
+            onSubmit={() => {
+              invalidateEvents();
+              setCurrentView('organizer-dashboard');
+            }}
           />
         );
       default:

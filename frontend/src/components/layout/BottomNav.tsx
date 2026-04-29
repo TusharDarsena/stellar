@@ -19,6 +19,14 @@ export function BottomNav({ currentView, onNavigate }: BottomNavProps) {
           <span className="material-symbols-outlined">explore</span>
           <span className="text-[10px] font-medium mt-1">Browse</span>
         </button>
+
+        <button 
+          onClick={() => onNavigate('marketplace')}
+          className={`flex flex-col items-center justify-center relative w-16 ${currentView === 'marketplace' ? "text-primary after:content-[''] after:absolute after:-top-3 after:w-8 after:h-1 after:bg-primary after:rounded-full" : "text-on-surface-variant active:bg-outline-dim"}`}
+        >
+          <span className="material-symbols-outlined">storefront</span>
+          <span className="text-[10px] font-medium mt-1">Market</span>
+        </button>
         
         <button 
           onClick={() => onNavigate('my-tickets')}

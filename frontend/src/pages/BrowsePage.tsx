@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { Event } from '../types';
 import { EventCard } from '../components/events/EventCard';
 
-import { useEvents } from '../hooks/useEvents';
-
 interface BrowsePageProps {
+  events: Event[];
+  loading: boolean;
+  error: string | null;
   onEventClick: (eventId: string) => void;
 }
 
-export function BrowsePage({ onEventClick }: BrowsePageProps) {
-  const { events, loading, error } = useEvents();
+export function BrowsePage({ events, loading, error, onEventClick }: BrowsePageProps) {
 
   return (
     <main className="pt-24 pb-20 max-w-7xl mx-auto px-4 md:px-8 min-h-screen">

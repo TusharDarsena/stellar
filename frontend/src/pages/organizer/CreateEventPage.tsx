@@ -84,6 +84,11 @@ export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
         venue: form.venue || null,
         city: form.city || null,
         category: null,
+        status: 'Active',
+        current_supply: 0,
+        date_unix: dateUnix,
+        capacity: capacity,
+        price_per_ticket: Number(priceStroops)
       }).catch(err => console.warn('[CreateEvent] Supabase write failed:', err));
 
       setTxState({ status: 'success', hash: eventId });

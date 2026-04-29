@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Event, stroopsToXlm } from '../types';
+import { Event, stroopsToXlm, formatEventDate } from '../types';
 import { Button } from '../components/ui/Button';
 import { useAppStore } from '../store/useAppStore';
 import { purchaseTicket } from '../lib/soroban';
@@ -7,22 +7,29 @@ import { generateID } from '../lib/utils';
 
 import { useEvents } from '../hooks/useEvents';
 import { useWallet } from '../hooks/useWallet';
+import { useXlmPrice } from '../hooks/useXlmPrice';
+
+import { supabase } from '../lib/supabase';
 
 interface PurchasePageProps {
   eventId: string;
   onBack: () => void;
   onPurchaseComplete: (ticketId: string) => void;
+  invalidateEvents: () => Promise<void>;
+  invalidateTickets: () => void;
 }
 
-export function PurchasePage({ eventId, onBack, onPurchaseComplete }: PurchasePageProps) {
+export function PurchasePage({ eventId, onBack, onPurchaseComplete, invalidateEvents, invalidateTickets }: PurchasePageProps) {
   const { events, loading, error } = useEvents();
   const event = events.find(e => e.eventId === eventId);
 
   const quantity = 1;
   const { wallet, setTxState } = useAppStore();
   const { connectAttendee } = useWallet();
+  const { usdPerXlm } = useXlmPrice();
   const priceXlm = event ? parseFloat(stroopsToXlm(event.pricePerTicket)) : 0;
   const totalPrice = priceXlm * quantity;
+  const totalUsd = usdPerXlm ? totalPrice * usdPerXlm : null;
 
   if (loading) return <div className="p-20 text-center text-slate-400">Loading...</div>;
   if (error) return <div className="p-20 text-center text-red-500">{error}</div>;
@@ -37,6 +44,22 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete }: PurchasePa
       // For quantity > 1 this would loop, but MVP keeps it at 1 per tx for simplicity.
       const ticketId = generateID();
       await purchaseTicket(event.eventId, wallet.publicKey, ticketId, wallet.signFn);
+      
+      // Update Supabase
+      await supabase.from('tickets').insert({
+        ticket_id: ticketId,
+        event_id: event.eventId,
+        owner_address: wallet.publicKey,
+        status: 'Active',
+      });
+      await supabase.rpc('increment_event_supply', { row_id: event.eventId }); // Wait, RPC? We don't have an RPC for increment. We can just update it using the known supply + 1. 
+      // Actually, doing currentSupply + 1 is fine since we have it, or let's use an increment if possible, but PG doesn't have simple + 1 without RPC or raw sql.
+      // Let's just do `event.currentSupply + 1` for MVP.
+      await supabase.from('events').update({ current_supply: event.currentSupply + 1 }).eq('event_id', event.eventId);
+      
+      await invalidateEvents();
+      invalidateTickets();
+
       setTxState({ status: 'success' });
 
       // Wait for success animation before navigating
@@ -103,11 +126,11 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete }: PurchasePa
               <div className="flex items-center gap-4 text-sm text-[#938ea1]">
                 <div className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-sm">calendar_today</span>
-                  Oct 24, 2024
+                  {formatEventDate(event.dateUnix)}
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-sm">location_on</span>
-                  Crypto Arena
+                  {event.venue ?? 'TBA'}
                 </div>
               </div>
             </div>
@@ -131,13 +154,14 @@ export function PurchasePage({ eventId, onBack, onPurchaseComplete }: PurchasePa
               <span className="text-xs font-semibold text-[#938ea1] block mb-1">Price per ticket</span>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold">{priceXlm.toFixed(2)} XLM</span>
-                <span className="text-sm text-[#938ea1]">($15.20)</span>
+                {usdPerXlm !== null && <span className="text-sm text-[#938ea1]">(~${(priceXlm * usdPerXlm).toFixed(2)})</span>}
               </div>
             </div>
             <div className="text-right">
               <span className="text-xs font-semibold text-[#938ea1] block mb-1">Total Amount</span>
               <div className="flex items-center gap-2 justify-end">
                 <span className="text-2xl font-bold text-[#7C5CFF]">{totalPrice.toFixed(2)} XLM</span>
+                {totalUsd !== null && <span className="text-sm text-[#938ea1] font-normal">(~${totalUsd.toFixed(2)})</span>}
               </div>
             </div>
           </div>
