@@ -8,7 +8,8 @@ Stellar Ticketing is a decentralized platform for event management and NFT ticke
 
 ---
 
-
+## Demo Video
+![Demo Video Youtube Link](https://youtu.be/0vL_UVSGT3I)
 
 ## 🚀 Live Demo 
 
