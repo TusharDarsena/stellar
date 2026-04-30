@@ -8,8 +8,7 @@ Stellar Ticketing is a decentralized platform for event management and NFT ticke
 
 ---
 
-## Demo Video
-[![Demo Video Placeholder](https://markdown-videos-api.jorgenkh.no/youtube/[VIDEO_ID]?width=1024&height=576&filetype=jpeg)](https://youtu.be/[VIDEO_ID])
+
 
 ## 🚀 Live Demo 
 
@@ -162,12 +161,12 @@ Attendees shouldn't need to understand seed phrases. We generate a one-time `Key
 
 ## ⚙️ Advanced Features
 
-| Feature | Description |
-|---|---|
-| **Restricted Resale** | Tickets can only be resold via our verified marketplace. |
-| **Auto-Royalties** | Organizers receive a cut of every secondary sale automatically. |
-| **Pull-Based Refunds** | If an event is cancelled, users can claim their XLM back. |
-| **Escrow Vault** | Funds are locked in the contract until the event concludes. |
+| Feature                | Description                                                     |
+| ---------------------- | --------------------------------------------------------------- |
+| **Restricted Resale**  | Tickets can only be resold via our verified marketplace.        |
+| **Auto-Royalties**     | Organizers receive a cut of every secondary sale automatically. |
+| **Pull-Based Refunds** | If an event is cancelled, users can claim their XLM back.       |
+| **Escrow Vault**       | Funds are locked in the contract until the event concludes.     |
 
 ---
 
@@ -204,33 +203,33 @@ Attendees shouldn't need to understand seed phrases. We generate a one-time `Key
 
 ## 👥 User Feedback
 
-**Onboarding Form:** [[RESPOND_HERE]](https://forms.gle/[FORM_ID])
+
 
 ### Table 1: User Directory (8 Users)
 
-| User Name | User Email | User Wallet Address |
-|---|---|---|
-| Raj Sahana | raj24100@iiitnr.edu.in | `GBO2QWEASOGVG5CKB2TACPTMPA76R5YBSAPUVMYSXT3TEJDMQF2QIFWB` |
-| Harsh Kaushik | harsh24100@iiitnr.edu.in | `GDGYKU5F45M6M3455JVAEKJJPVVZJC2DLVDJCEXOTT4YTS4GXQZFTAO2` |
-| Tushar Darsena | tushar24100@iiitnr.edu.in | `GANJAYHTTU45XRPUF7ACHW6QKOKZKIUBCGALTC47PGPPSGOBF7OUPJUM` |
-| Madhav Seth | madhav24100@iiitnr.edu.in | `GC2V8B5N1M7Q4W9E3R6T2Y8U5I1O7P4A9S3D6F2G8H5J1K7L4Z9X3C6` |
-| Aksh Verma | aksh24100@iiitnr.edu.in | `GF1G6H2J8K4L9Z3X7C5V1B6N2M8Q4W7E3R9T5Y1U6I2O8P4A7S3D9F5` |
-| Anurag Upadhyay | anurag24100@iiitnr.edu.in | `GAM3Q7W1E9R4T6Y2U8I5O1P7A3S9D4F6G2H8J5K1L7Z3X9C4V6B2N8M` |
-| Mayank Dixit | mayank24100@iiitnr.edu.in | `GBN8M2V6C4X9Z3L7K1J5H8G2F6D4S9A3P7O1I5U8Y2T6R4E9W1Q7M3A` |
-| Vaibhav Singh | vaibhav24100@iiitnr.edu.in | `GCT4Y8U2I6O1P5A9S3D7F2G6H1J4K8L2Z5X9C3V7B1N6M4Q8W2E5R9T` |
+| User Name       | User Email                 | User Wallet Address                                        |
+| --------------- | -------------------------- | ---------------------------------------------------------- |
+| Raj Sahana      | raj24100@iiitnr.edu.in     | `GBO2QWEASOGVG5CKB2TACPTMPA76R5YBSAPUVMYSXT3TEJDMQF2QIFWB` |
+| Harsh Kaushik   | harsh24100@iiitnr.edu.in   | `GDGYKU5F45M6M3455JVAEKJJPVVZJC2DLVDJCEXOTT4YTS4GXQZFTAO2` |
+| Tushar Darsena  | tushar24100@iiitnr.edu.in  | `GANJAYHTTU45XRPUF7ACHW6QKOKZKIUBCGALTC47PGPPSGOBF7OUPJUM` |
+| Madhav Seth     | madhav24100@iiitnr.edu.in  | `GC2V8B5N1M7Q4W9E3R6T2Y8U5I1O7P4A9S3D6F2G8H5J1K7L4Z9X3C6`  |
+| Aksh Verma      | aksh24100@iiitnr.edu.in    | `GF1G6H2J8K4L9Z3X7C5V1B6N2M8Q4W7E3R9T5Y1U6I2O8P4A7S3D9F5`  |
+| Anurag Upadhyay | anurag24100@iiitnr.edu.in  | `GAM3Q7W1E9R4T6Y2U8I5O1P7A3S9D4F6G2H8J5K1L7Z3X9C4V6B2N8M`  |
+| Mayank Dixit    | mayank24100@iiitnr.edu.in  | `GBN8M2V6C4X9Z3L7K1J5H8G2F6D4S9A3P7O1I5U8Y2T6R4E9W1Q7M3A`  |
+| Vaibhav Singh   | vaibhav24100@iiitnr.edu.in | `GCT4Y8U2I6O1P5A9S3D7F2G6H1J4K8L2Z5X9C3V7B1N6M4Q8W2E5R9T`  |
 
 ### Table 2: User Feed Implementation (User Feedback)
 
-| User Name | User Email | User Wallet Address | User Feedback | Commit ID (changes based on feedback) |
-|---|---|---|---|---|
-| Raj Sahana | raj24100@iiitnr.edu.in | `GBO2QWEASOGVG5CKB2TACPTMPA76R5YBSAPUVMYSXT3TEJDMQF2QIFWB` | I can't find where to create an event. | [dcfe7de](https://github.com/TusharDarsena/stellar/commit/dcfe7de) |
-| Harsh Kaushik | harsh24100@iiitnr.edu.in | `GDGYKU5F45M6M3455JVAEKJJPVVZJC2DLVDJCEXOTT4YTS4GXQZFTAO2` | I want to be able to sell my tickets if I can't attend. | [2c09807](https://github.com/TusharDarsena/stellar/commit/2c09807) |
-| Tushar Darsena | tushar24100@iiitnr.edu.in | `GANJAYHTTU45XRPUF7ACHW6QKOKZKIUBCGALTC47PGPPSGOBF7OUPJUM` | I need a way to verify tickets at the door. | [511d9b9](https://github.com/TusharDarsena/stellar/commit/511d9b9) |
-| Madhav Seth | madhav24100@iiitnr.edu.in | `GC2V8B5N1M7Q4W9E3R6T2Y8U5I1O7P4A9S3D6F2G8H5J1K7L4Z9X3C6` | The errors were confusing when I tried to buy a ticket. | [53b3728](https://github.com/TusharDarsena/stellar/commit/53b3728) |
-| Aksh Verma | aksh24100@iiitnr.edu.in | `GF1G6H2J8K4L9Z3X7C5V1B6N2M8Q4W7E3R9T5Y1U6I2O8P4A7S3D9F5` | The UI colors should be more consistent. | [5cfe98d](https://github.com/TusharDarsena/stellar/commit/5cfe98d) |
-| Anurag Upadhyay | anurag24100@iiitnr.edu.in | `GAM3Q7W1E9R4T6Y2U8I5O1P7A3S9D4F6G2H8J5K1L7Z3X9C4V6B2N8M` | The app feels faster and transactions are more reliable. | [b8882e8](https://github.com/TusharDarsena/stellar/commit/b8882e8) |
-| Mayank Dixit | mayank24100@iiitnr.edu.in | `GBN8M2V6C4X9Z3L7K1J5H8G2F6D4S9A3P7O1I5U8Y2T6R4E9W1Q7M3A` | I'm worried about the security of my ticket ownership. | [58f43f2](https://github.com/TusharDarsena/stellar/commit/58f43f2) |
-| Vaibhav Singh | vaibhav24100@iiitnr.edu.in | `GCT4Y8U2I6O1P5A9S3D7F2G6H1J4K8L2Z5X9C3V7B1N6M4Q8W2E5R9T` | The initial landing page was too simple. | [4d8bb21](https://github.com/TusharDarsena/stellar/commit/4d8bb21) |
+| User Name       | User Email                 | User Wallet Address                                        | User Feedback                                            | Commit ID (changes based on feedback)                              |
+| --------------- | -------------------------- | ---------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
+| Raj Sahana      | raj24100@iiitnr.edu.in     | `GBO2QWEASOGVG5CKB2TACPTMPA76R5YBSAPUVMYSXT3TEJDMQF2QIFWB` | I can't find where to create an event.                   | [dcfe7de](https://github.com/TusharDarsena/stellar/commit/dcfe7de) |
+| Harsh Kaushik   | harsh24100@iiitnr.edu.in   | `GDGYKU5F45M6M3455JVAEKJJPVVZJC2DLVDJCEXOTT4YTS4GXQZFTAO2` | I want to be able to sell my tickets if I can't attend.  | [2c09807](https://github.com/TusharDarsena/stellar/commit/2c09807) |
+| Tushar Darsena  | tushar24100@iiitnr.edu.in  | `GANJAYHTTU45XRPUF7ACHW6QKOKZKIUBCGALTC47PGPPSGOBF7OUPJUM` | I need a way to verify tickets at the door.              | [511d9b9](https://github.com/TusharDarsena/stellar/commit/511d9b9) |
+| Madhav Seth     | madhav24100@iiitnr.edu.in  | `GC2V8B5N1M7Q4W9E3R6T2Y8U5I1O7P4A9S3D6F2G8H5J1K7L4Z9X3C6`  | The errors were confusing when I tried to buy a ticket.  | [53b3728](https://github.com/TusharDarsena/stellar/commit/53b3728) |
+| Aksh Verma      | aksh24100@iiitnr.edu.in    | `GF1G6H2J8K4L9Z3X7C5V1B6N2M8Q4W7E3R9T5Y1U6I2O8P4A7S3D9F5`  | The UI colors should be more consistent.                 | [5cfe98d](https://github.com/TusharDarsena/stellar/commit/5cfe98d) |
+| Anurag Upadhyay | anurag24100@iiitnr.edu.in  | `GAM3Q7W1E9R4T6Y2U8I5O1P7A3S9D4F6G2H8J5K1L7Z3X9C4V6B2N8M`  | The app feels faster and transactions are more reliable. | [b8882e8](https://github.com/TusharDarsena/stellar/commit/b8882e8) |
+| Mayank Dixit    | mayank24100@iiitnr.edu.in  | `GBN8M2V6C4X9Z3L7K1J5H8G2F6D4S9A3P7O1I5U8Y2T6R4E9W1Q7M3A`  | I'm worried about the security of my ticket ownership.   | [58f43f2](https://github.com/TusharDarsena/stellar/commit/58f43f2) |
+| Vaibhav Singh   | vaibhav24100@iiitnr.edu.in | `GCT4Y8U2I6O1P5A9S3D7F2G6H1J4K8L2Z5X9C3V7B1N6M4Q8W2E5R9T`  | The initial landing page was too simple.                 | [4d8bb21](https://github.com/TusharDarsena/stellar/commit/4d8bb21) |
 
 ---
 
@@ -246,11 +245,11 @@ Contributions are welcome. Please read `AGENTS.md` before starting.
 
 ## 🚀 Next-Phase Improvement Plan
 
-| Priority | Improvement | Status |
-|---|---|---|
-| High | Web3Auth Integration for Social Logins | Planned |
-| Medium | Multi-Event Organizer Dashboard | In Progress |
-| Low | Email Notifications for Ticket Purchase | Backlog |
+| Priority | Improvement                             | Status      |
+| -------- | --------------------------------------- | ----------- |
+| High     | Web3Auth Integration for Social Logins  | Planned     |
+| Medium   | Multi-Event Organizer Dashboard         | In Progress |
+| Low      | Email Notifications for Ticket Purchase | Backlog     |
 
 ---
 
