@@ -139,7 +139,16 @@ function App() {
             onBack={() => { setSelectedTicketId(null); setCurrentView('my-tickets'); }}
           />
         ) : (
-          <MyTicketsPage onShowQR={handleShowQR} onBrowseMore={() => setCurrentView('browse')} invalidateTickets={invalidateTickets} invalidateEvents={invalidateEvents} />
+          <MyTicketsPage
+            tickets={tickets}
+            events={events}
+            loadingTickets={loadingTickets}
+            errorTickets={errorTickets}
+            onShowQR={handleShowQR}
+            onBrowseMore={() => setCurrentView('browse')}
+            invalidateTickets={invalidateTickets}
+            invalidateEvents={invalidateEvents}
+          />
         );
       case 'scanner':
         return <ScannerPage onBack={() => setCurrentView('organizer-dashboard')} invalidateTickets={invalidateTickets} />;
