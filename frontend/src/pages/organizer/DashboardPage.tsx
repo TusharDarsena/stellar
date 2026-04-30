@@ -9,11 +9,9 @@ interface DashboardPageProps {
   readonly invalidateEvents: () => Promise<void>;
 }
 
-import { useEvents } from '../../hooks/useEvents';
 import { useAppStore } from '../../store/useAppStore';
 import { useWallet } from '../../hooks/useWallet';
 import { releaseFunds, cancelEvent } from '../../lib/soroban';
-import { upsertEventMetadata } from '../../lib/supabase'; // We'll just use a raw supabase query, wait, no, `upsertEventMetadata` handles events. But it's an update, let's import supabase.
 import { supabase } from '../../lib/supabase';
 
 export function DashboardPage({ events, onCreateEvent, onScanTickets, invalidateEvents }: DashboardPageProps) {

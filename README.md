@@ -13,7 +13,7 @@ Stellar Ticketing is a decentralized platform for event management and NFT ticke
 
 ## 🚀 Live Demo 
 
-- **Live Demo**: [[LIVE_URL]](https://[LIVE_URL])
+- **Live Demo**: [stellar-gamma-weld.vercel.app](https://stellar-gamma-weld.vercel.app/)
 
 ## Contact Addresses
 - **Ticket Contract**: [`CC2EV22Q3MRKNYKWAFUODA7IH2UGT7NCDASHU62QY4UAMAI4KTW6NFTQ`](https://stellar.expert/explorer/testnet/contract/CC2EV22Q3MRKNYKWAFUODA7IH2UGT7NCDASHU62QY4UAMAI4KTW6NFTQ)
@@ -129,7 +129,7 @@ Monitor contract interactions and event health via Stellar's public infrastructu
 
 ## 📊 Metrics Dashboard
 
-[Metrics Dashboard Link](https://[LIVE_URL]/metrics)
+[Metrics Dashboard Link](https://stellar-gamma-weld.vercel.app/metrics)
 
 ![Organizer Hub Mobile View](screenshots/organizer_hub_mobile_view.png)
 
