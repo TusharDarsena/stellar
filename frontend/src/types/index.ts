@@ -22,6 +22,7 @@ export interface Event {
   description?: string;
   venue?: string;
   city?: string;
+  category?: string;
 }
 
 export interface Ticket {

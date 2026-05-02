@@ -1,5 +1,5 @@
 import React, { HTMLAttributes } from 'react';
-import { cn } from './Button';
+import { cn } from '../../lib/utils';
 
 interface BadgeProps extends HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'success' | 'warning' | 'destructive' | 'outline';

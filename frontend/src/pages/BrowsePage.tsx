@@ -46,7 +46,7 @@ export function BrowsePage({ events, loading, error, onEventClick }: BrowsePageP
     return events.filter(event => {
       const matchesCategory =
         activeCategory === 'All' ||
-        (event as any).category?.toLowerCase() === activeCategory.toLowerCase();
+        event.category?.toLowerCase() === activeCategory.toLowerCase();
       const matchesSearch =
         !searchQuery ||
         event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

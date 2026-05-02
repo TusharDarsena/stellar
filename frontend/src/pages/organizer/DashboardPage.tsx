@@ -1,5 +1,5 @@
-import React from 'react';
-import { Event, formatEventDate } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { Event } from '../../types';
 import { OrganizerEventRow } from '../../components/organizer/OrganizerEventRow';
 
 interface DashboardPageProps {
@@ -17,6 +17,13 @@ import { supabase } from '../../lib/supabase';
 export function DashboardPage({ events, onCreateEvent, onScanTickets, invalidateEvents }: DashboardPageProps) {
   const { wallet, setTxState } = useAppStore();
   const { connectOrganizer } = useWallet();
+  const [now, setNow] = useState(0);
+
+  useEffect(() => {
+    setTimeout(() => setNow(Date.now()), 0);
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const organizerEvents = wallet.publicKey
     ? events.filter(e => e.organizer === wallet.publicKey)
@@ -40,9 +47,10 @@ export function DashboardPage({ events, onCreateEvent, onScanTickets, invalidate
 
       setTxState({ status: 'success', hash: 'Funds released successfully!' });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Release funds failed', e);
-      setTxState({ status: 'error', errorMessage: e.message || 'Failed to release funds' });
+      const msg = e instanceof Error ? e.message : 'Failed to release funds';
+      setTxState({ status: 'error', errorMessage: msg });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     }
   };
@@ -59,9 +67,10 @@ export function DashboardPage({ events, onCreateEvent, onScanTickets, invalidate
 
       setTxState({ status: 'success', hash: 'Event cancelled successfully.' });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Cancel event failed', e);
-      setTxState({ status: 'error', errorMessage: e.message || 'Failed to cancel event' });
+      const msg = e instanceof Error ? e.message : 'Failed to cancel event';
+      setTxState({ status: 'error', errorMessage: msg });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     }
   };
@@ -174,7 +183,7 @@ export function DashboardPage({ events, onCreateEvent, onScanTickets, invalidate
           {organizerEvents.map((event) => {
             const ticketsSold = event.currentSupply;
             const escrowXlm = event.status === 'Active' ? ticketsSold * (event.pricePerTicket / 10_000_000) : 0;
-            const canRelease = event.status === 'Active' && event.dateUnix * 1000 < Date.now();
+            const canRelease = event.status === 'Active' && event.dateUnix * 1000 < now;
             const lockedUntilLabel = canRelease || event.status === 'Completed' || event.status === 'Cancelled' ? undefined : `Locked Until ${new Date(event.dateUnix * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 
             return (

@@ -20,7 +20,7 @@ import {
 import { supabase } from '../lib/supabase';
 
 export function useWallet() {
-  const { wallet, setWallet } = useAppStore();
+  const { setWallet } = useAppStore();
 
   // ── Organizer path: Freighter ──────────────────────────────────────────────
   const connectOrganizer = useCallback(async () => {

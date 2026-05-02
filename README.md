@@ -2,14 +2,14 @@
 
 NFT event ticketing on Stellar. Built with Soroban.
 
-[![Stellar Ticketing CI/CD](https://github.com/TusharDarsena/stellar/actions/workflows/ci.yml/badge.svg)](https://github.com/TusharDarsena/stellar/actions)
+[![Stellar Ticketing CI/CD](https://github.com/TusharDarsena/stellar_ticket/actions/workflows/ci.yml/badge.svg)](https://github.com/TusharDarsena/stellar_ticket/actions)
 
 Stellar Ticketing is a decentralized platform for event management and NFT ticketing. It leverages Soroban smart contracts to handle event creation, ticket minting, escrowed payments, and restricted resales with automatic royalty enforcement. Attendees enjoy a "crypto-less" experience via Burner Wallets and rotating QR codes for secure entry.
 
 ---
 
 ## Demo Video
-![Demo Video Youtube Link](https://youtu.be/0vL_UVSGT3I)
+[![Stellar Ticketing Demo](https://img.youtube.com/vi/0vL_UVSGT3I/0.jpg)](https://www.youtube.com/watch?v=0vL_UVSGT3I)
 
 ## 🚀 Live Demo 
 
@@ -203,6 +203,10 @@ Attendees shouldn't need to understand seed phrases. We generate a one-time `Key
 ---
 
 ## 👥 User Feedback
+
+**Onboarding Form:** [Respond Here](https://docs.google.com/forms/d/e/1FAIpQLScbdaOwdFKAHovTqp05JWgNYRpKFy1PbqMO66gJWyfIP5tC5Q/viewform?usp=publish-editor)
+
+**Exported Responses:** [Google Sheets](https://docs.google.com/spreadsheets/d/16wtT51hHhg7vxNKymvdoYG8XIrabSRpZ927yTyBSG2M/edit?usp=sharing)
 
 
 

@@ -61,9 +61,10 @@ export function MarketplacePage({ listings, loading, error, invalidateListings, 
 
       setTxState({ status: 'success', hash: 'Ticket purchased successfully!' });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Buy listing failed:', e);
-      setTxState({ status: 'error', errorMessage: e.message || 'Purchase failed.' });
+      const msg = e instanceof Error ? e.message : 'Purchase failed.';
+      setTxState({ status: 'error', errorMessage: msg });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     } finally {
       setBuyingId(null);

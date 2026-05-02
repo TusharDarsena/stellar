@@ -19,6 +19,10 @@ export function useEvents(): {
 
   const fetchEvents = useCallback(async () => {
     const fetchId = ++fetchRef.current;
+    
+    // Move to next microtask to avoid cascading render warning in React 19
+    await Promise.resolve();
+    
     setLoading(true);
     setError(null);
 
@@ -52,7 +56,7 @@ export function useEvents(): {
   }, []);
 
   useEffect(() => {
-    fetchEvents();
+    setTimeout(() => { void fetchEvents(); }, 0);
     intervalRef.current = setInterval(fetchEvents, POLL_INTERVAL_MS);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);

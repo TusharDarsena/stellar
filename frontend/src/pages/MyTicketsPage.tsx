@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, Event, formatEventDate, formatDateTime, xlmToStroops } from '../types';
+import { Ticket, Event, formatDateTime, xlmToStroops } from '../types';
 import { TicketCard } from '../components/tickets/TicketCard';
 
 import { generateID } from '../lib/utils';
 import { refundTicket, listTicket, cancelListing } from '../lib/soroban';
 import { supabase, fetchOpenListingByTicket } from '../lib/supabase';
 import { useAppStore } from '../store/useAppStore';
+
+interface ListingMinimal {
+  listing_id?: string;
+  listingId?: string;
+}
 
 interface MyTicketsPageProps {
   tickets: Ticket[];
@@ -20,7 +25,7 @@ interface MyTicketsPageProps {
 
 export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, onShowQR, onBrowseMore, invalidateEvents, invalidateTickets }: MyTicketsPageProps) {
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
-  const [openListings, setOpenListings] = useState<Record<string, any>>({});
+  const [openListings, setOpenListings] = useState<Record<string, unknown>>({});
   const [showListingModal, setShowListingModal] = useState<string | null>(null);
   const [askPrice, setAskPrice] = useState('');
 
@@ -40,9 +45,10 @@ export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, o
 
       setTxState({ status: 'success', hash: 'Refund processed successfully' });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Refund failed:', e);
-      setTxState({ status: 'error', errorMessage: e.message || 'Refund failed' });
+      const msg = e instanceof Error ? e.message : 'Refund failed';
+      setTxState({ status: 'error', errorMessage: msg });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     }
   };
@@ -92,9 +98,10 @@ export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, o
 
       setTxState({ status: 'success', hash: 'Ticket listed for sale!' });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('List ticket failed:', e);
-      setTxState({ status: 'error', errorMessage: e.message || 'Listing failed' });
+      const msg = e instanceof Error ? e.message : 'Listing failed';
+      setTxState({ status: 'error', errorMessage: msg });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     }
   };
@@ -102,15 +109,16 @@ export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, o
   const handleCancelListing = async (ticketId: string) => {
     if (!wallet.isConnected || !wallet.publicKey || !wallet.signFn) return;
 
-    const listing = openListings[ticketId];
-    if (!listing) return;
+    const listing = openListings[ticketId] as ListingMinimal;
+    const lid = listing.listing_id || listing.listingId;
+    if (!lid) return;
 
     setTxState({ status: 'building' });
     try {
-      await cancelListing(wallet.publicKey, listing.listing_id || listing.listingId, wallet.signFn);
+      await cancelListing(wallet.publicKey, lid, wallet.signFn);
 
       // Update Supabase
-      await supabase.from('listings').update({ status: 'Cancelled' }).eq('listing_id', listing.listing_id || listing.listingId);
+      await supabase.from('listings').update({ status: 'Cancelled' }).eq('listing_id', lid);
 
       setOpenListings(prev => {
         const next = { ...prev };
@@ -120,9 +128,10 @@ export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, o
 
       setTxState({ status: 'success', hash: 'Listing cancelled' });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Cancel listing failed:', e);
-      setTxState({ status: 'error', errorMessage: e.message || 'Cancel failed' });
+      const msg = e instanceof Error ? e.message : 'Cancel failed';
+      setTxState({ status: 'error', errorMessage: msg });
       setTimeout(() => setTxState({ status: 'idle' }), 3000);
     }
   };
@@ -142,7 +151,7 @@ export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, o
 
     let isMounted = true;
     async function checkListings() {
-      const results: Record<string, any> = {};
+      const results: Record<string, unknown> = {};
       await Promise.all(activeTickets.map(async (t) => {
         const listing = await fetchOpenListingByTicket(t.ticketId);
         if (listing) {
@@ -155,7 +164,7 @@ export function MyTicketsPage({ tickets, events, loadingTickets, errorTickets, o
     }
     checkListings();
     return () => { isMounted = false; };
-  }, [tickets]); // Dependency changed from the join map to the entire array instance to fix string allocation overhead. Using tickets ensures it syncs with App state.
+  }, [activeTickets]); // Dependency changed to activeTickets to ensure it syncs when relevant tickets change.
 
   return (
     <main className="pt-24 pb-32 px-4 md:px-8 max-w-7xl mx-auto min-h-screen">

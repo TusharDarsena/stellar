@@ -1,5 +1,5 @@
 import React, { HTMLAttributes } from 'react';
-import { cn } from './Button';
+import { cn } from '../../lib/utils';
 
 export const Card = React.forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (

@@ -1,16 +1,15 @@
 import React from 'react';
-import { Event, stroopsToXlm, formatEventDate } from '../types';
+import { stroopsToXlm, formatEventDate } from '../types';
 import { Button } from '../components/ui/Button';
 
 interface EventDetailPageProps {
   eventId: string;
-  onBack: () => void;
   onPurchase: (eventId: string) => void;
 }
 
 import { useEvents } from '../hooks/useEvents';
 
-export function EventDetailPage({ eventId, onBack, onPurchase }: EventDetailPageProps) {
+export function EventDetailPage({ eventId, onPurchase }: EventDetailPageProps) {
   const { events, loading, error } = useEvents();
   const event = events.find(e => e.eventId === eventId);
 

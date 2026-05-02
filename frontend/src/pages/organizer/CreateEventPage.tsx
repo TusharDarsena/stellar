@@ -13,7 +13,6 @@ interface CreateEventFormData {
 }
 
 interface CreateEventPageProps {
-  readonly onBack: () => void;
   readonly onSubmit: () => void;
 }
 
@@ -34,7 +33,7 @@ import { createEvent } from '../../lib/soroban';
 import { upsertEventMetadata } from '../../lib/supabase';
 import { xlmToStroops } from '../../types';
 
-export function CreateEventPage({ onBack, onSubmit }: CreateEventPageProps) {
+export function CreateEventPage({ onSubmit }: CreateEventPageProps) {
   const [form, setForm] = useState<CreateEventFormData>(EMPTY_FORM);
 
   const handleChange = (field: keyof CreateEventFormData) =>

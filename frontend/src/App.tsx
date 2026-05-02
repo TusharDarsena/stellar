@@ -36,11 +36,13 @@ function App() {
   // Auto-route connected users after a refresh
   useEffect(() => {
     if (_hasHydrated && currentView === 'landing' && wallet.isConnected) {
-      if (wallet.walletType === 'freighter') {
-        setCurrentView('organizer-dashboard');
-      } else {
-        setCurrentView('browse');
-      }
+      setTimeout(() => {
+        if (wallet.walletType === 'freighter') {
+          setCurrentView('organizer-dashboard');
+        } else {
+          setCurrentView('browse');
+        }
+      }, 0);
     }
   }, [_hasHydrated, wallet.isConnected, wallet.walletType, currentView]);
 
@@ -100,7 +102,6 @@ function App() {
         return selectedEventId ? (
           <EventDetailPage
             eventId={selectedEventId}
-            onBack={() => setCurrentView('browse')}
             onPurchase={handlePurchaseInit}
           />
         ) : (
@@ -136,7 +137,6 @@ function App() {
         return selectedTicketId ? (
           <QRDisplayPage
             ticketId={selectedTicketId}
-            onBack={() => { setSelectedTicketId(null); setCurrentView('my-tickets'); }}
           />
         ) : (
           <MyTicketsPage
@@ -151,7 +151,7 @@ function App() {
           />
         );
       case 'scanner':
-        return <ScannerPage onBack={() => setCurrentView('organizer-dashboard')} invalidateTickets={invalidateTickets} />;
+        return <ScannerPage invalidateTickets={invalidateTickets} />;
       case 'organizer-dashboard':
         return (
           <DashboardPage
@@ -174,7 +174,6 @@ function App() {
       case 'organizer-create':
         return (
           <CreateEventPage
-            onBack={() => setCurrentView('organizer-dashboard')}
             onSubmit={() => {
               invalidateEvents();
               setCurrentView('organizer-dashboard');

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { EventStatus } from '../types';
+
 
 export interface ListingWithEvent {
   listingId: string;
@@ -12,6 +12,20 @@ export interface ListingWithEvent {
   eventName: string;
   eventImageUrl: string | null;
   eventDateUnix: number;
+}
+
+interface ListingRow {
+  listing_id: string;
+  seller_address: string;
+  ticket_id: string;
+  event_id: string;
+  ask_price_stroops: string | number;
+  status: string;
+  events: {
+    name: string | null;
+    image_url: string | null;
+    date_unix: number;
+  } | null;
 }
 
 const POLL_INTERVAL_MS = 30_000;
@@ -30,6 +44,10 @@ export function useListings(): {
 
   const fetchListings = useCallback(async () => {
     const fetchId = ++fetchRef.current;
+    
+    // Move to next microtask to avoid cascading render warning in React 19
+    await Promise.resolve();
+
     setLoading(true);
     setError(null);
 
@@ -56,7 +74,7 @@ export function useListings(): {
 
       if (fetchId !== fetchRef.current) return;
 
-      const resolved: ListingWithEvent[] = (data || []).map((row: any) => ({
+      const resolved: ListingWithEvent[] = ((data as unknown as ListingRow[]) || []).map((row) => ({
         listingId: row.listing_id,
         seller: row.seller_address,
         ticketId: row.ticket_id,
@@ -78,7 +96,7 @@ export function useListings(): {
   }, []);
 
   useEffect(() => {
-    fetchListings();
+    setTimeout(() => { void fetchListings(); }, 0);
     intervalRef.current = setInterval(fetchListings, POLL_INTERVAL_MS);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);

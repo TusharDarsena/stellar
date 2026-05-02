@@ -7,18 +7,17 @@ import { getTicket, markUsed } from '../lib/soroban';
 import { supabase } from '../lib/supabase';
 
 interface ScannerPageProps {
-  onBack: () => void;
   invalidateTickets: () => void;
 }
 
-export function ScannerPage({ onBack, invalidateTickets }: ScannerPageProps) {
+export function ScannerPage({ invalidateTickets }: ScannerPageProps) {
   const [scanResult, setScanResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [scanDetails, setScanDetails] = useState<{ ticketId: string; walletAddress: string } | null>(null);
   const [attendeeProfile, setAttendeeProfile] = useState<{ displayName: string; avatarUrl: string } | null>(null);
   const { wallet } = useAppStore();
   const scannerRef = React.useRef<Html5Qrcode | null>(null);
 
-  const handleScan = async (data: string) => {
+  const handleScan = React.useCallback(async (data: string) => {
     // Pause immediately to prevent spam
     if (scannerRef.current) {
       scannerRef.current.pause(true);
@@ -69,7 +68,7 @@ export function ScannerPage({ onBack, invalidateTickets }: ScannerPageProps) {
         console.error('[ScannerPage] markUsed failed:', err);
       }
     }
-  };
+  }, [wallet.publicKey, wallet.signFn, invalidateTickets]);
 
   useEffect(() => {
     // Slight delay to ensure DOM is ready
@@ -95,7 +94,7 @@ export function ScannerPage({ onBack, invalidateTickets }: ScannerPageProps) {
         scannerRef.current.stop().catch(console.error);
       }
     };
-  }, []);
+  }, [handleScan]);
 
   // Dev-only buttons — render behind import.meta.env.DEV guard so they tree-shake in prod.
   const DEV_MODE = import.meta.env.DEV;

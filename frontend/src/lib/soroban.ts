@@ -117,7 +117,7 @@ export async function purchaseTicket(
     const tx = await client.purchase({ event_id: eventId, buyer: buyerPublicKey, ticket_id: ticketId });
     await tx.signAndSend({ signTransaction: signFn });
   } catch (err) {
-    throw new Error(extractErrorMessage(err, TICKET_ERRORS));
+    throw new Error(extractErrorMessage(err, TICKET_ERRORS), { cause: err });
   }
 }
 
@@ -142,7 +142,7 @@ export async function createEvent(
     });
     await tx.signAndSend({ signTransaction: signFn });
   } catch (err) {
-    throw new Error(extractErrorMessage(err, TICKET_ERRORS));
+    throw new Error(extractErrorMessage(err, TICKET_ERRORS), { cause: err });
   }
 }
 
@@ -159,7 +159,7 @@ export async function releaseFunds(
     const tx = await client.release_funds({ event_id: eventId, organizer: organizerPublicKey });
     await tx.signAndSend({ signTransaction: signFn });
   } catch (err) {
-    throw new Error(extractErrorMessage(err, TICKET_ERRORS));
+    throw new Error(extractErrorMessage(err, TICKET_ERRORS), { cause: err });
   }
 }
 
@@ -176,7 +176,7 @@ export async function cancelEvent(
     const tx = await client.cancel_event({ event_id: eventId, organizer: organizerPublicKey });
     await tx.signAndSend({ signTransaction: signFn });
   } catch (err) {
-    throw new Error(extractErrorMessage(err, TICKET_ERRORS));
+    throw new Error(extractErrorMessage(err, TICKET_ERRORS), { cause: err });
   }
 }
 
@@ -194,7 +194,7 @@ export async function markUsed(
     const tx = await client.mark_used({ ticket_id: ticketId, organizer: organizerPublicKey });
     await tx.signAndSend({ signTransaction: signFn });
   } catch (err) {
-    throw new Error(extractErrorMessage(err, TICKET_ERRORS));
+    throw new Error(extractErrorMessage(err, TICKET_ERRORS), { cause: err });
   }
 }
 
@@ -211,7 +211,7 @@ export async function refundTicket(
     const tx = await client.refund({ ticket_id: ticketId, attendee: attendeePublicKey });
     await tx.signAndSend({ signTransaction: signFn });
   } catch (err) {
-    throw new Error(extractErrorMessage(err, TICKET_ERRORS));
+    throw new Error(extractErrorMessage(err, TICKET_ERRORS), { cause: err });
   }
 }
 
@@ -240,7 +240,7 @@ export async function listTicket(
     });
     await tx.signAndSend({ signTransaction: signFn });
   } catch (err) {
-    throw new Error(extractErrorMessage(err, MARKETPLACE_ERRORS));
+    throw new Error(extractErrorMessage(err, MARKETPLACE_ERRORS), { cause: err });
   }
 }
 
@@ -262,7 +262,7 @@ export async function buyListing(
     });
     await tx.signAndSend({ signTransaction: signFn });
   } catch (err) {
-    throw new Error(extractErrorMessage(err, MARKETPLACE_ERRORS));
+    throw new Error(extractErrorMessage(err, MARKETPLACE_ERRORS), { cause: err });
   }
 }
 
@@ -279,7 +279,7 @@ export async function cancelListing(
     const tx = await client.cancel_listing({ seller: sellerPublicKey, listing_id: listingId });
     await tx.signAndSend({ signTransaction: signFn });
   } catch (err) {
-    throw new Error(extractErrorMessage(err, MARKETPLACE_ERRORS));
+    throw new Error(extractErrorMessage(err, MARKETPLACE_ERRORS), { cause: err });
   }
 }
 

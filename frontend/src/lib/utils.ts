@@ -1,6 +1,9 @@
 import { customAlphabet } from 'nanoid';
 import BigNumber from 'bignumber.js';
 
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 // Standard alphanumeric alphabet (no hyphens or underscores)
 // Prevents Soroban Symbol crashes and ensures compact IDs.
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -35,3 +38,7 @@ export const localDateTimeToUtcUnix = (dateTimeLocal: string): number => {
   const date = new Date(dateTimeLocal);
   return Math.floor(date.getTime() / 1000);
 };
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}

@@ -5,10 +5,9 @@ import { buildQRPayload } from '../lib/qr';
 
 interface QRDisplayPageProps {
   ticketId: string;
-  onBack: () => void;
 }
 
-export function QRDisplayPage({ ticketId, onBack }: QRDisplayPageProps) {
+export function QRDisplayPage({ ticketId }: QRDisplayPageProps) {
   const [countdown, setCountdown] = useState(30);
   const [tick, setTick] = useState(0); // increments every rotation to rebuild payload
   const { wallet } = useAppStore();
